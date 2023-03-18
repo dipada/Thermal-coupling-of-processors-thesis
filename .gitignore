@@ -1,3 +1,6 @@
+#vscode rules
+.vscode/*
+
 #C rules
 
 # Object files
