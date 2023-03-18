@@ -5,7 +5,6 @@
 #include <fcntl.h>
 #include <stdint.h>
 #include <time.h>
-#include <ctype.h>
 
 #define MSR_TERM_STATUS 0x19c        // cpus temp
 #define MSR_TEMPERATURE_TARGET 0x1a2 // for TjMax
@@ -50,7 +49,7 @@ int main(int argc, char **argv){
     }
   }
   }else{ // default value, run for 5 secs
-    printf("Setting duration time to 5 secs\n");
+    printf("Setting duration time to %d secs\n", DEFAULT_DURATION);
     duration_secs = DEFAULT_DURATION;
   }
 
