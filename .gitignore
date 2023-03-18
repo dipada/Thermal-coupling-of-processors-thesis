@@ -1,0 +1,10 @@
+#C rules
+
+# Object files
+*.o
+*.obj
+
+# Executables
+*/bin/*
+*.exe
+*.out
