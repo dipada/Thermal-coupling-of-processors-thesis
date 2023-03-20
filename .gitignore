@@ -1,5 +1,5 @@
 #vscode rules
-.vscode/*
+.vscode/
 
 #C rules
 
@@ -11,3 +11,6 @@
 bin/*
 *.exe
 *.out
+
+#outputs
+output/
