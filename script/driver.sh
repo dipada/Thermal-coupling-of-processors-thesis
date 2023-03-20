@@ -1,30 +1,67 @@
 #!/bin/bash
 
-readonly MAX_FREQ_MHZ=$(lscpu | grep -E '^CPU max MHz' | awk '{print $4}' | awk -F"." '{print $1}')
+ROOT_UID=0     # Only users with $UID 0 have root privileges.
+E_NOTROOT=67   # Non-root exit error.
+
+
+if [ "$UID" -ne "$ROOT_UID" ]
+then
+  echo "Must be root to run this script."
+  exit $E_NOTROOT
+fi 
+
+#readonly MAX_FREQ_MHZ=$(lscpu | grep -E '^CPU max MHz' | awk '{print $4}' | awk -F"." '{print $1}')
 readonly MIN_FREQ_MHZ=$(lscpu | grep -E '^CPU min MHz' | awk '{print $4}' | awk -F"." '{print $1}')
+readonly BASE_FREQ_MHZ=$(lscpu | grep 'Model name:' | awk '{print $8}' | cut -c1-4 | awk '{printf "%d", $1 * 1000}')
 
-echo "Starting from $MIN_FREQ_MHZ MHz to $MAX_FREQ_MHZ MHz"
+readonly DAT_DIR="output/dat-files"
+readonly CONF_DIR="resources/configuration"
 
-#freq=$MIN_FREQ_MHZ
-freq=2500
+echo "Starting from $MIN_FREQ_MHZ MHz to $BASE_FREQ_MHZ MHz"
+
+freq=$MIN_FREQ_MHZ
 
 sleep 5
 
 
-#$MAX_FREQ_MHZ
-while [ $freq -le 2600 ]
+# TODO signal Handler SIGINT
+
+# disabling turbo
+./control_turbo.sh
+
+while [ $freq -le $BASE_FREQ_MHZ ]
 do
-    echo "freq $freq - MAX $MAX_FREQ_MHZ"
+    echo "Actual $freq MHz - Target $BASE_FREQ_MHZ MHz"
 
-    sudo sh ./set_cpu_freq.sh $freq
+    sudo ./set_cpu_freq.sh $freq
 
-    sudo ./rdMsr INF &> /dev/null
-    PID=$!
+    (
+      cd ..
+      make
+     #echo $(pwd)
+      exec ./bin/read_msr INF > /dev/null
+    )&
+    read_msr_pid=$!
 
-    sudo trace-cmd record -e sched_switch -f "prev_comm==\"rt-app\" || next_comm==\"rt-app\"" -e read_msr -f "msr==0x19c" rt-app singleCAlter.json && trace-cmd report > toParse.txt 
+    (
+      cd ..
+      echo $(pwd)
+      trace-cmd record -e sched_switch -f "prev_comm==\"rt-app\" || next_comm==\"rt-app\"" -e read_msr -f "msr==0x19c" -o $DAT_DIR/traceprov.dat rt-app $CONF_DIR/singleCAlter.json
+      exec trace-cmd report $DAT_DIR/traceprov.dat > output/reports/$freq.txt 
+    )&
+
+    trace_pid=$!
+    
+    wait $trace_pid
+    echo "trace finito"
+    
+    kill -SIGINT $read_msr_pid
+    wait $read_msr_pid
+    
+
+    #sudo trace-cmd record -e sched_switch -f "prev_comm==\"rt-app\" || next_comm==\"rt-app\"" -e read_msr -f "msr==0x19c" rt-app singleCAlter.json && trace-cmd report > toParse.txt 
     
    
-    sleep 1
 
     freq=$(($freq + 100))
 done
