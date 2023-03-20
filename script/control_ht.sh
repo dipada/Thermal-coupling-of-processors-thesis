@@ -3,6 +3,16 @@
 # options on - off - forceoff
 # https://serverfault.com/questions/235825/disable-hyperthreading-from-within-linux-no-access-to-bios
 
+ROOT_UID=0     # Only users with $UID 0 have root privileges.
+E_NOTROOT=67   # Non-root exit error.
+
+
+if [ "$UID" -ne "$ROOT_UID" ]
+then
+  echo "Must be root to run this script."
+  exit $E_NOTROOT
+fi 
+
 ht=$(cat /sys/devices/system/cpu/smt/active)
 
 # Check if hyper threading is enabled
