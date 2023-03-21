@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# This script set the cpu frequency to a given values
+# Passing only one argument to the script 
+# will set min and max frequency to the same value
+# passing two arguments will set min frequency with lower value
+# and max frequency with higher value
+
 ROOT_UID=0     # Only users with $UID 0 have root privileges.
 E_NOTROOT=67   # Non-root exit error.
 
@@ -10,28 +16,53 @@ then
   exit $E_NOTROOT
 fi 
 
-readonly MAX_FREQ_MHZ=$(lscpu | grep -E '^CPU max MHz' | awk '{print $4}' | awk -F"." '{print $1}')
-readonly MIN_FREQ_MHZ=$(lscpu | grep -E '^CPU min MHz' | awk '{print $4}' | awk -F"." '{print $1}')
+#readonly MAX_FREQ_MHZ=$(lscpu | grep -E '^CPU max MHz' | awk '{print $4}' | awk -F"." '{print $1}')
+#readonly MIN_FREQ_MHZ=$(lscpu | grep -E '^CPU min MHz' | awk '{print $4}' | awk -F"." '{print $1}')
+
+readonly MAX_FREQ_MHZ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq | awk '{print $1/1000}')
+readonly MIN_FREQ_MHZ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq | awk '{print $1/1000}')
 
 readonly FREQROOT=/sys/devices/system/cpu
+readonly PRINT_USAGE="Usage:\t\t$0 frequency (MHz)\n\t\t$0 2600\n\t\t$0 2600 2800"
 
 # check if arg0 is empty
 if [ $# -eq 0 ]; then
-  echo "Usage: $0 frequency (MHz)"
-  echo "Example: $0 2600"
+  echo -e $PRINT_USAGE
   exit 1
 fi
 
-frequency=$(echo $1);
+if [ $# -eq 1 ]; then
+  freq_min=$1
+  freq_max=$1
+fi
+
+if [ $# -eq 2 ]; then
+  if [ $1 -lt $2 ]; then
+    freq_min=$1
+    freq_max=$2
+  else
+    freq_min=$2
+    freq_max=$1
+  fi
+fi
+
+#frequency=$(echo $1);
 
 #re='^[0-9]+(\.[0-9]+)?$'
 re='^[0-9]+$'
 
-# check if freq is an integer
-echo "$frequency" | grep -E $re > /dev/null   # POSIX compilant
+# check if freqs are integers
+echo "$freq_min" | grep -E $re > /dev/null
 
 if [ $? -ne 0 ]; then
-  echo "$frequency Invalid frequency. Frequency must be an integer number and in MHz"
+  echo "Invalid frequency $freq_min. Frequency must be an integer number and in MHz"
+  exit 1
+fi
+
+echo "$freq_max" | grep -E $re > /dev/null   # POSIX compilant
+
+if [ $? -ne 0 ]; then
+  echo "Invalid frequency $freq_max. Frequency must be an integer number and in MHz"
   exit 1
 fi
 
@@ -39,8 +70,13 @@ fi
 #https://unix.stackexchange.com/questions/232384/argument-string-to-integer-in-bash
 
 # check if the frequency is supported by the cpu
-if [ "$frequency" -lt "$MIN_FREQ_MHZ" ] || [ "$frequency" -gt "$MAX_FREQ_MHZ" ];then
-  echo "Unsupported frequency: $frequency. This CPU support this range ($MIN_FREQ_MHZ - $MAX_FREQ_MHZ) MHz"
+if [ "$freq_min" -lt "$MIN_FREQ_MHZ" ];then
+  echo "Unsupported min frequency: $freq_min. This CPU support this range ($MIN_FREQ_MHZ - $MAX_FREQ_MHZ) MHz"
+  exit 1
+fi
+
+if [ "$freq_max" -gt "$MAX_FREQ_MHZ" ]; then
+  echo "Unsupported frequency: $freq_max. This CPU support this range ($MIN_FREQ_MHZ - $MAX_FREQ_MHZ) MHz"
   exit 1
 fi
 
@@ -54,29 +90,17 @@ do
   #echo "Setting cpu-"$i" to" $frequency "MHz"
   FREQMAX="$FREQROOT/cpu"$i"/cpufreq/scaling_max_freq" 
   FREQMIN="$FREQROOT/cpu"$i"/cpufreq/scaling_min_freq"
-  echo $(($frequency * 1000)) > $FREQMAX
-  echo $(($frequency * 1000)) > $FREQMIN
+  echo $(($freq_max * 1000)) > $FREQMAX
+  echo $(($freq_min * 1000)) > $FREQMIN
 
   i=$(expr $i + 1)
 done
 
-echo "CPU frequency set to $frequency MHz"
+if [ $freq_min -eq $freq_max ]; then
+  echo "CPU frequencies set to $freq_min MHz"
+  echo -e "Currently cores running at:\n$(cat /proc/cpuinfo | grep "cpu MHz" | awk -F':' '{print $2}')"
+else
+  echo "CPU frequencies set to $freq_min MHz (min frequency) - $freq_max MHz (max frequency)"
+fi
 
-echo -e "Currently cores running at:\n$(cat /proc/cpuinfo | grep "cpu MHz" | awk -F':' '{print $2}')"
 echo 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
