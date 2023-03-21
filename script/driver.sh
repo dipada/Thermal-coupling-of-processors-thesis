@@ -26,6 +26,26 @@ readonly CONF_DIR="$RES_DIR/configuration"
 readonly SETTING_DIR="$RES_DIR/stock-settings"
 readonly RT_LOGS_DIR="$OUTPUT_DIR/rt-app-logs"
 
+
+if [ $# -eq 0 ]; then
+  echo "Starting swapper mode ..."
+  TRACE_CMD_RECORD="trace-cmd record -P 0 -e sched_switch -o $DAT_DIR/$freq.dat sleep 1"
+elif [ $1 == "-rt" ]; then
+  echo "Starting rt-app mode ..."
+  if [ $# -ne 2 ] || [ ! -f $CONF_DIR/$2 ]; then
+    echo -e "Error: input file not found\nMake sure the file exists in $(basename $CONF_DIR)/"
+    exit 1
+  else
+    echo "... loading configuration file $2 ..."
+    #TRACE_CMD_RECORD="trace-cmd record -q -e sched_switch -f "prev_comm==\"rt-app\" || next_comm==\"rt-app\"" -e read_msr -f "msr==0x19c" -o $DAT_DIR/$freq.dat rt-app $CONF_DIR/$2"
+    TRACE_CMD_RECORD="trace-cmd record -q -e sched_switch -f \"prev_comm==\\\"rt-app\\\" || next_comm==\\\"rt-app\\\"\" -e read_msr -f \"msr==0x19c\" -o $DAT_DIR/$freq.dat rt-app $CONF_DIR/$2"
+  fi 
+else
+  echo -e "Usage: $0\n$0 [-rt <input_file>]"
+  exit 1
+fi
+
+
 # TODO signal Handler SIGINT
 
 cd ..
@@ -95,7 +115,7 @@ cd script
 
 # execute tracing on rt-app on frequency range
 # every loop frequency will be increased by 100 mhz
-while [ $freq -le $BASE_FREQ_MHZ ]
+while [ $freq -le 900 ]
 do
     echo "Actual $freq MHz - Target $BASE_FREQ_MHZ MHz"
 
@@ -111,7 +131,8 @@ do
     (
       cd ..
       #echo $(pwd)
-      trace-cmd record -q -e sched_switch -f "prev_comm==\"rt-app\" || next_comm==\"rt-app\"" -e read_msr -f "msr==0x19c" -o $DAT_DIR/$freq.dat rt-app $CONF_DIR/singleCAlter.json
+      #trace-cmd record -q -e sched_switch -f "prev_comm==\"rt-app\" || next_comm==\"rt-app\"" -e read_msr -f "msr==0x19c" -o $DAT_DIR/$freq.dat rt-app $CONF_DIR/singleCAlter.json
+      eval $TRACE_CMD_RECORD
       exec trace-cmd report $DAT_DIR/$freq.dat > $REP_DIR/$freq.txt 
     )&
 
