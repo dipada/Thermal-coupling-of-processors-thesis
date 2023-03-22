@@ -15,7 +15,7 @@
 		"pi_enabled" : false,
 		"lock_pages" : false,
 		"logdir" : "output/rt-app-logs/",
-		"log_basename" : "log-dan-test",
+		"log_basename" : "single-core",
 		"gnuplot" : false
 	}
 }
