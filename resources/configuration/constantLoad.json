@@ -1,0 +1,22 @@
+{
+    "tasks": {
+        "task1": {
+            "loop" : -1,
+            "runtime": 60000,
+            "period": 100000,
+            "deadline": 100000,
+            "util_min": 60,
+            "util_max": 60
+        }
+    },
+    "global": {
+        "duration" : 10,
+		"calibration" : 50,
+		"default_policy" : "SCHED_DEADLINE",
+		"pi_enabled" : false,
+		"lock_pages" : false,
+		"logdir" : "output/rt-app-logs/",
+		"log_basename" : "constant-load-deadline",
+		"gnuplot" : false
+    }
+}

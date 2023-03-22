@@ -28,6 +28,8 @@ readonly RT_LOGS_DIR="$OUTPUT_DIR/rt-app-logs"
 
 EXEC_MODE=0  # 0 = swapper, 1 = rt-app
 
+# -rt option start rt-app mode and need a configuration file
+# if no option is passed swapper mode is started
 
 if [ $# -eq 0 ]; then
   echo "Starting swapper mode ..."
@@ -165,10 +167,10 @@ echo "Restoring stock CPU configuration..."
 #./control_turbo.sh $(cat $SETTING_DIR/stock_settings.txt | grep -E '^turbo' | awk '{print $2}')
 #./control_hyperthreading.sh $(cat $SETTING_DIR/stock_settings.txt | grep -E '^hyperthreading' | awk '{print $2}')
 echo $(cat $SETTING_DIR/stock_settings.txt | grep turbo | awk '{print $2}') > /sys/devices/system/cpu/intel_pstate/no_turbo
-if [ $(cat $SETTING_DIR/stock_settings.txt | grep hyperthreading | awk '{print $2}') == "1" ]; then
-  echo on | sudo tee /sys/devices/system/cpu/smt/control
+if [ $(cat $SETTING_DIR/stock_settings.txt | grep hyperthreading | awk '{print $2}') -eq 1 ]; then
+  echo on | sudo tee /sys/devices/system/cpu/smt/control > /dev/null
 else
-  echo off | sudo tee /sys/devices/system/cpu/smt/control
+  echo off | sudo tee /sys/devices/system/cpu/smt/control > /dev/null
 fi
 
 #S_MIN_FREQ=$(cat $SETTING_DIR/stock_settings.txt | grep -E '^CPU min MHz' | awk '{print $4}' | awk -F"." '{print $1}')
