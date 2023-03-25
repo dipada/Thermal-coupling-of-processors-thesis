@@ -14,7 +14,7 @@
                       \n(3) rdmsr INF-(unbounded execution) readMsrEveryNanoSecs-(opt)\n"); \
                       exit(EXIT_FAILURE);
 #define UNBOUNDED "INF"
-#define DEFAULT_READ 1000000
+#define DEFAULT_READ 100000000
 #define DEFAULT_DURATION 5
 
 int main(int argc, char **argv){
