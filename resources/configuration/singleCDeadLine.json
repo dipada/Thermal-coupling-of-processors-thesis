@@ -2,6 +2,7 @@
 	"tasks" : {
 		"thread0" : {
 			"loop" : -1,
+			"cpus" : [1],
 			"run" :   1000000,
 			"dl-runtime": 50000,
 			"dl-deadline": 100000,
