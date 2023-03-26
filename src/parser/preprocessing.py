@@ -8,6 +8,8 @@ import re
 import csv
 import datetime
 
+TJMAX = 100 # TJMAX value for Intel i7-9750H
+
 CURRENT_DIR = os.path.dirname(__file__)
 BASE_DIR = os.path.abspath(os.path.join(CURRENT_DIR, "../../"))
 REP_DIR = os.path.join(BASE_DIR, "output/reports/")
@@ -55,7 +57,7 @@ def read_msr_occurs(cpu, timestamp, desc):
         file_path = os.path.join(cpu_dir, f"msr_readings_{cpu}.csv") 
         with open(file_path, "a") as f:
             writer = csv.writer(f)
-            writer.writerow([timestamp, value >> 16 & 0x7F])
+            writer.writerow([timestamp, TJMAX - (value >> 16 & 0x7F)])
 
 if len(sys.argv) != 2:
     print("Usage: python3 preprocessing.py <trace_file>")
