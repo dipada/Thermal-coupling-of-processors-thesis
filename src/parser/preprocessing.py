@@ -41,7 +41,21 @@ def sched_switch_occurs(cpu, timestamp, desc):
 
 
 def read_msr_occurs(cpu, timestamp, desc):
-    print(f"read_msr event at timestamp {timestamp} on cpu {cpu} with description: {desc}")
+    value_regex = r'19c, value\s+([0-9a-fA-F]+)\b'
+
+    match = re.match(value_regex, desc)
+    if match:
+        # convert value in hex
+        value = int(match.group(1), 16)
+        
+        cpu_dir = os.path.join(in_file_dir, cpu)
+        if not os.path.exists(cpu_dir):
+            os.mkdir(cpu_dir)
+
+        file_path = os.path.join(cpu_dir, f"msr_readings_{cpu}.csv") 
+        with open(file_path, "a") as f:
+            writer = csv.writer(f)
+            writer.writerow([timestamp, value >> 16 & 0x7F])
 
 if len(sys.argv) != 2:
     print("Usage: python3 preprocessing.py <trace_file>")
@@ -101,7 +115,6 @@ with open(file_path, "r") as f:
                 sched_switch_occurs(cpu_num, time_stamp, description)
                 
             elif event_type == "read_msr":
-                pass
-                #read_msr_occurs(cpu_num, time_stamp, description)
+                read_msr_occurs(cpu_num, time_stamp, description)
 
 print("Preprocessing >> Done!\nFiles are in " + os.path.relpath(date_dir) + " directory.")
