@@ -101,7 +101,11 @@ echo "min freq $(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq | awk
 echo "max freq $(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq | awk '{print $1/1000}')" >> $SETTING_DIR/stock_settings.txt
 echo turbo $(cat /sys/devices/system/cpu/intel_pstate/no_turbo) >> $SETTING_DIR/stock_settings.txt
 echo hyperthreading $(cat /sys/devices/system/cpu/smt/active) >> $SETTING_DIR/stock_settings.txt
+echo sched_rt_runtime_us $(cat /proc/sys/kernel/sched_rt_runtime_us) >> $SETTING_DIR/stock_settings.txt
 
+# unbounded execution time of real-time tasks
+echo "Setting unbounded execution time for real-time tasks"
+$(echo -1 > /proc/sys/kernel/sched_rt_runtime_us)
 
 
 echo "Frequency range ($MIN_FREQ_MHZ - $BASE_FREQ_MHZ MHz)"
@@ -171,6 +175,7 @@ done
 echo $(pwd)
 # restore stock configuration
 echo "Restoring stock CPU configuration..."
+echo $(cat $SETTING_DIR/stock_settings.txt | grep sched_rt_runtime_us | awk '{print $2}') | sudo tee /proc/sys/kernel/sched_rt_runtime_us
 #./control_turbo.sh $(cat $SETTING_DIR/stock_settings.txt | grep -E '^turbo' | awk '{print $2}')
 #./control_hyperthreading.sh $(cat $SETTING_DIR/stock_settings.txt | grep -E '^hyperthreading' | awk '{print $2}')
 echo $(cat $SETTING_DIR/stock_settings.txt | grep turbo | awk '{print $2}') > /sys/devices/system/cpu/intel_pstate/no_turbo
