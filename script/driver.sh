@@ -29,6 +29,29 @@ readonly RT_LOGS_DIR="$OUTPUT_DIR/rt-app-logs"
 
 EXEC_MODE=0  # 0 = swapper, 1 = rt-app
 
+function sigint_handler() {
+    echo -e "\nRestoring stock configuration..."
+    restore_stock_configuration
+    echo "Exiting..."
+    trap - SIGINT
+    exit 0
+}
+
+function restore_stock_configuration(){
+  echo $(cat $SETTING_DIR/stock_settings.txt | grep sched_rt_runtime_us | awk '{print $2}') | sudo tee /proc/sys/kernel/sched_rt_runtime_us > /dev/null
+  echo $(cat $SETTING_DIR/stock_settings.txt | grep turbo | awk '{print $2}') | sudo tee /sys/devices/system/cpu/intel_pstate/no_turbo > /dev/null
+  if [ $(cat $SETTING_DIR/stock_settings.txt | grep hyperthreading | awk '{print $2}') -eq 1 ]; then
+    echo on | sudo tee /sys/devices/system/cpu/smt/control > /dev/null
+  else
+    echo off | sudo tee /sys/devices/system/cpu/smt/control > /dev/null
+  fi
+
+  S_MIN_FREQ=$(cat $SETTING_DIR/stock_settings.txt | grep 'min freq' | awk '{print $3}')
+  S_MAX_FREQ=$(cat $SETTING_DIR/stock_settings.txt | grep 'max freq' | awk '{print $3}')
+}
+
+
+
 # -rt option start rt-app mode and need a configuration file
 # if no option is passed swapper mode is started
 
@@ -110,6 +133,9 @@ $(echo -1 > /proc/sys/kernel/sched_rt_runtime_us)
 
 echo "Frequency range ($MIN_FREQ_MHZ - $BASE_FREQ_MHZ MHz)"
 
+# Imposta il gestore di segnali per SIGINT alla funzione sigint_handler
+trap 'sigint_handler' SIGINT
+
 freq=$MIN_FREQ_MHZ
 
 #sleep 5
@@ -172,23 +198,8 @@ do
     freq=$(($freq + 100))
 done
 
-echo $(pwd)
 # restore stock configuration
-echo "Restoring stock CPU configuration..."
-echo $(cat $SETTING_DIR/stock_settings.txt | grep sched_rt_runtime_us | awk '{print $2}') | sudo tee /proc/sys/kernel/sched_rt_runtime_us
-#./control_turbo.sh $(cat $SETTING_DIR/stock_settings.txt | grep -E '^turbo' | awk '{print $2}')
-#./control_hyperthreading.sh $(cat $SETTING_DIR/stock_settings.txt | grep -E '^hyperthreading' | awk '{print $2}')
-echo $(cat $SETTING_DIR/stock_settings.txt | grep turbo | awk '{print $2}') > /sys/devices/system/cpu/intel_pstate/no_turbo
-if [ $(cat $SETTING_DIR/stock_settings.txt | grep hyperthreading | awk '{print $2}') -eq 1 ]; then
-  echo on | sudo tee /sys/devices/system/cpu/smt/control > /dev/null
-else
-  echo off | sudo tee /sys/devices/system/cpu/smt/control > /dev/null
-fi
-
-#S_MIN_FREQ=$(cat $SETTING_DIR/stock_settings.txt | grep -E '^CPU min MHz' | awk '{print $4}' | awk -F"." '{print $1}')
-S_MIN_FREQ=$(cat $SETTING_DIR/stock_settings.txt | grep 'min freq' | awk '{print $3}')
-#S_MAX_FREQ=$(cat $SETTING_DIR/stock_settings.txt | grep -E '^CPU max MHz' | awk '{print $4}' | awk -F"." '{print $1}')
-S_MAX_FREQ=$(cat $SETTING_DIR/stock_settings.txt | grep 'max freq' | awk '{print $3}')
+restore_stock_configuration
 
 ./set_cpu_freq.sh $S_MIN_FREQ $S_MAX_FREQ
 
