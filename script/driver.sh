@@ -19,6 +19,7 @@ readonly BASE_FREQ_MHZ=$(lscpu | grep 'Model name:' | awk '{print $8}' | cut -c1
 
 readonly BASE_DIR=$(dirname $(pwd))
 readonly OUTPUT_DIR="$BASE_DIR/output"
+readonly SRC_DIR="$BASE_DIR/src"
 readonly DAT_DIR="$OUTPUT_DIR/dat-files"
 readonly REP_DIR="$OUTPUT_DIR/reports"
 readonly RES_DIR="$BASE_DIR/resources"
@@ -179,3 +180,16 @@ S_MIN_FREQ=$(cat $SETTING_DIR/stock_settings.txt | grep 'min freq' | awk '{print
 S_MAX_FREQ=$(cat $SETTING_DIR/stock_settings.txt | grep 'max freq' | awk '{print $3}')
 
 ./set_cpu_freq.sh $S_MIN_FREQ $S_MAX_FREQ
+
+# parse generated reports
+cd $REP_DIR
+date=$(date +%d-%m-%Y-%H-%M-%S)
+
+for file in *.txt
+do
+  python3 $SRC_DIR/parser/preprocessing.py "$file" "$date"&
+done
+
+wait
+
+echo -e "Done!\nFiles are in $(dirname $OUTPUT_DIR)/csv/$date directory"
