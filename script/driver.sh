@@ -136,12 +136,18 @@ do
       cd ..
       
       if [ $EXEC_MODE -eq 0 ]; then
-        trace-cmd record -P 0 -e sched_switch -o $DAT_DIR/sw_$freq.dat sleep 1
-        exec trace-cmd report $DAT_DIR/sw_$freq.dat > $REP_DIR/sw_$freq.txt 
+      echo "swapper mode"
+      # constant load, variable frequency
+      # 
+        #trace-cmd record -P 0 -e sched_switch -f "prev_comm==\"rt-app\" || next_comm==\"rt-app\"" -e read_msr -f "msr==0x19c" -o $DAT_DIR/sw_$freq.dat rt-app $CONF_DIR/$2
+        #exec trace-cmd report $DAT_DIR/sw_$freq.dat > $REP_DIR/sw_$freq.txt 
       else
         # rt-app mode
-        trace-cmd record -e sched_switch -f "prev_comm==\"rt-app\" || next_comm==\"rt-app\"" -e read_msr -f "msr==0x19c" -o $DAT_DIR/$freq.dat rt-app $CONF_DIR/$2
-        exec trace-cmd report $DAT_DIR/$freq.dat > $REP_DIR/$freq.txt 
+        # -f "prev_comm==\"rt-app\" || next_comm==\"rt-app\""
+        trace-cmd record -P0 -e sched_switch -e read_msr -f "msr==0x19c" -o $DAT_DIR/sw_$freq.dat rt-app $CONF_DIR/$2
+        exec trace-cmd report $DAT_DIR/sw_$freq.dat > $REP_DIR/sw_$freq.txt 
+        #trace-cmd record -e sched_switch -f "prev_comm==\"rt-app\" || next_comm==\"rt-app\"" -e read_msr -f "msr==0x19c" -o $DAT_DIR/$freq.dat rt-app $CONF_DIR/$2
+        #exec trace-cmd report $DAT_DIR/$freq.dat > $REP_DIR/$freq.txt 
       fi      
     )&
 
