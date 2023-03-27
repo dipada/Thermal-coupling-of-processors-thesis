@@ -16,6 +16,7 @@ REP_DIR = os.path.join(BASE_DIR, "output/reports/")
 CSV_DIR = os.path.join(BASE_DIR, "output/csv/")
 
 cpu_state = {}
+user_date_dir = None
 
 def sched_switch_occurs(cpu, timestamp, desc):
     start_exec = r'swapper/\d+:0.*==>.*'
@@ -59,9 +60,19 @@ def read_msr_occurs(cpu, timestamp, desc):
             writer = csv.writer(f)
             writer.writerow([timestamp, TJMAX - (value >> 16 & 0x7F)])
 
-if len(sys.argv) != 2:
-    print("Usage: python3 preprocessing.py <trace_file>")
+if len(sys.argv) < 2 or len(sys.argv) > 3:
+    print("Usage: python preprocessing.py <file_name> <date_dir>")
+    print("Example: python preprocessing.py report.txt 25-03-2023-12-00-00")
     exit(1)    
+
+if len(sys.argv) == 3:
+    try:
+        user_date_dir = datetime.datetime.strptime(sys.argv[2], "%d-%m-%Y-%H-%M-%S")
+    except ValueError:
+        print("Incorrect date format, should be DD-MM-YYYY-HH-MM-SS")
+        exit(1)
+else:
+    print("Date dir not specified. Will be generated automatically by this program.")
 
 file_name = sys.argv[1]
 file_path = os.path.join(REP_DIR, file_name)
@@ -71,12 +82,18 @@ if not os.path.exists(file_path):
     print("File " + file_name + " does not exist "  + file_path)
     exit(1)
 
+print("Preprocessing - " + file_name + " >> Started...")
+
 # check if CSV directory exists and create it if not
 if not os.path.exists(CSV_DIR):
     os.mkdir(CSV_DIR)
 
 # Makes needed directories       
-date_dir = os.path.join(CSV_DIR, datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S"))
+if user_date_dir is not None:
+    date_dir = os.path.join(CSV_DIR, user_date_dir.strftime("%d-%m-%Y-%H-%M-%S"))
+else:
+    date_dir = os.path.join(CSV_DIR, datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S"))
+
 if not os.path.exists(date_dir):
     os.mkdir(date_dir)
 
@@ -119,4 +136,7 @@ with open(file_path, "r") as f:
             elif event_type == "read_msr":
                 read_msr_occurs(cpu_num, time_stamp, description)
 
-print("Preprocessing >> Done!\nFiles are in " + os.path.relpath(date_dir) + " directory.")
+if user_date_dir is None:
+    print("Preprocessing - " + file_name + " >> Done!\nFiles are in " + os.path.relpath(date_dir) + " directory.")
+else:
+    print("Preprocessing - " + file_name + " >> Done!")
