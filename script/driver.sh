@@ -12,8 +12,6 @@ then
   exit $E_NOTROOT
 fi 
 
-#readonly MAX_FREQ_MHZ=$(lscpu | grep -E '^CPU max MHz' | awk '{print $4}' | awk -F"." '{print $1}')
-#readonly MIN_FREQ_MHZ=$(lscpu | grep -E '^CPU min MHz' | awk '{print $4}' | awk -F"." '{print $1}')
 readonly MIN_FREQ_MHZ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq | awk '{print $1/1000}')
 readonly BASE_FREQ_MHZ=$(lscpu | grep 'Model name:' | awk '{print $8}' | cut -c1-4 | awk '{printf "%d", $1 * 1000}')
 
@@ -27,7 +25,8 @@ readonly CONF_DIR="$RES_DIR/configuration"
 readonly SETTING_DIR="$RES_DIR/stock-settings"
 readonly RT_LOGS_DIR="$OUTPUT_DIR/rt-app-logs"
 
-EXEC_MODE=0  # 0 = swapper, 1 = rt-app
+EXEC_MODE=0  # 0 = constant load, variable frequency mode
+             # 1 = rt-app mode
 
 function sigint_handler() {
     echo -e "\nRestoring stock configuration..."
@@ -56,7 +55,7 @@ function restore_stock_configuration(){
 # if no option is passed swapper mode is started
 
 if [ $# -eq 0 ]; then
-  echo "Starting swapper mode ..."
+  echo "Starting constant load variable frequency mode ..."
   EXEC_MODE=0
 elif [ $1 == "-rt" ]; then
   echo "Starting rt-app mode ..."
@@ -118,9 +117,7 @@ fi
 
 # Save current configuration
 echo "Saving current CPU configuration..."
-#echo $(lscpu | grep -E '^CPU min MHz') > $SETTING_DIR/stock_settings.txt
 echo "min freq $(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq | awk '{print $1/1000}')" > $SETTING_DIR/stock_settings.txt
-#echo $(lscpu | grep -E '^CPU max MHz') >> $SETTING_DIR/stock_settings.txt
 echo "max freq $(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq | awk '{print $1/1000}')" >> $SETTING_DIR/stock_settings.txt
 echo turbo $(cat /sys/devices/system/cpu/intel_pstate/no_turbo) >> $SETTING_DIR/stock_settings.txt
 echo hyperthreading $(cat /sys/devices/system/cpu/smt/active) >> $SETTING_DIR/stock_settings.txt
@@ -133,12 +130,10 @@ $(echo -1 > /proc/sys/kernel/sched_rt_runtime_us)
 
 echo "Frequency range ($MIN_FREQ_MHZ - $BASE_FREQ_MHZ MHz)"
 
-# Imposta il gestore di segnali per SIGINT alla funzione sigint_handler
+# Set sigint_handler as SIGINT handler 
 trap 'sigint_handler' SIGINT
 
 freq=$MIN_FREQ_MHZ
-
-#sleep 5
 
 cd script
 # disabling turbo
@@ -146,6 +141,7 @@ cd script
 
 # disabling hyper threading
 ./control_ht.sh
+
 
 # execute tracing on rt-app on frequency range
 # every loop frequency will be increased by 100 mhz
@@ -155,9 +151,8 @@ do
 
     ./set_cpu_freq.sh $freq
 
-    (
+    ( # start read_msr program
       cd ..
-      #echo $(pwd)
       exec ./bin/read_msr INF > /dev/null
     )&
     read_msr_pid=$!
@@ -166,18 +161,16 @@ do
       cd ..
       
       if [ $EXEC_MODE -eq 0 ]; then
-      echo "swapper mode"
       # constant load, variable frequency
       # 
         #trace-cmd record -P 0 -e sched_switch -f "prev_comm==\"rt-app\" || next_comm==\"rt-app\"" -e read_msr -f "msr==0x19c" -o $DAT_DIR/sw_$freq.dat rt-app $CONF_DIR/$2
         #exec trace-cmd report $DAT_DIR/sw_$freq.dat > $REP_DIR/sw_$freq.txt 
       else
         # rt-app mode
-        # -f "prev_comm==\"rt-app\" || next_comm==\"rt-app\""
-        trace-cmd record -P0 -e sched_switch -e read_msr -f "msr==0x19c" -o $DAT_DIR/sw_$freq.dat rt-app $CONF_DIR/$2
+        
+        trace-cmd record -P0 -P$read_msr_pid -e sched_switch -e read_msr -f "msr==0x19c" -o $DAT_DIR/sw_$freq.dat rt-app $CONF_DIR/$2
         exec trace-cmd report $DAT_DIR/sw_$freq.dat > $REP_DIR/sw_$freq.txt 
-        #trace-cmd record -e sched_switch -f "prev_comm==\"rt-app\" || next_comm==\"rt-app\"" -e read_msr -f "msr==0x19c" -o $DAT_DIR/$freq.dat rt-app $CONF_DIR/$2
-        #exec trace-cmd report $DAT_DIR/$freq.dat > $REP_DIR/$freq.txt 
+
       fi      
     )&
 
@@ -189,12 +182,8 @@ do
     wait $read_msr_pid
     
     echo -e "\n\n< Cooling the engines >\n\n"
-    sleep 3
-
-    #sudo trace-cmd record -e sched_switch -f "prev_comm==\"rt-app\" || next_comm==\"rt-app\"" -e read_msr -f "msr==0x19c" rt-app singleCAlter.json && trace-cmd report > toParse.txt 
-    
+    sleep 3  
    
-
     freq=$(($freq + 100))
 done
 
