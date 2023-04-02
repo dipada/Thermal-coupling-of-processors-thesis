@@ -1,12 +1,16 @@
 import os
 import sys
 import csv
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 CURRENT_DIR = os.path.dirname(__file__)
 BASE_DIR = os.path.abspath(os.path.join(CURRENT_DIR, "../../"))
 CSV_DIR = os.path.join(BASE_DIR, "output/csv/")
 PLOT_DIR = os.path.join(BASE_DIR, "output/plots/")
+SINGLE_PLOT = True
 
 start_times = {}
 end_times = {}
@@ -44,18 +48,29 @@ def load_data(dir_path):
                 for row in reader:
                     temp_times[cpu].append(float(row[0]))
                     temp[cpu].append(int(row[1]))
+    
+
 
 print("Plotting...")
 print("Current directory: " + CURRENT_DIR)
 print(os.path.basename(CURRENT_DIR))
 
 if len(sys.argv) < 2 or len(sys.argv) > 3:
-    print("Usage: python plotter.py <path_to_dir> for plot files in passed directory")
-    print("Example: python plotter.py 01-01-2023-00-00-00/800Mhz/")
+    print("Usage: python plotter.py <path_to_dir> for plot multiple figures by all subdirectories")
+    print("Usage: python plotter.py -s <path_to_dir> for plot single figure by directory")
+    print("Example: python plotter.py -s 01-01-2023-00-00-00/800Mhz/")
     exit(1)
 
-files_dir = sys.argv[1]
-files_path = os.path.join(CSV_DIR, files_dir)
+if sys.argv[1] == "-s": # if -s is passed, plot single figure using subdirectory
+    SINGLE_PLOT = True
+    files_dir = os.path.basename(os.path.dirname(sys.argv[2]))
+    subdir_to_plot = os.path.basename(sys.argv[2])
+    #files_path = os.path.join(CSV_DIR, files_dir)
+    files_path = os.path.join(os.path.join(CSV_DIR, files_dir), subdir_to_plot)
+else:                   # will plot multiple figures using all subdirectories 
+    SINGLE_PLOT = False
+    files_dir = sys.argv[1]
+    files_path = os.path.join(CSV_DIR, files_dir)
 
 if not os.path.exists(files_path):
     print("Directory " + files_dir + " does not exists")
@@ -69,7 +84,21 @@ if not os.path.exists(os.path.join(PLOT_DIR, files_dir)):
     os.mkdir(os.path.join(PLOT_DIR, files_dir))
 
 # loading and plotting data
-for subdir in os.listdir(files_path):
+if SINGLE_PLOT:
+    #path = os.path.join(files_path, subdir_to_plot)
+    load_data(files_path)
+
+    plot_two_subplots(subdir_to_plot)
+else:
+    for subdir in os.listdir(files_path):
+        #print(f"FILES DIR {files_dir}")
     
-    subdir_path = os.path.join(files_path, subdir)
-    load_data(subdir_path)
+        subdir_path = os.path.join(files_path, subdir)
+        load_data(subdir_path)
+        plot_two_subplots(os.path.basename(subdir_path))
+        print(subdir)
+        print(subdir_path)
+        print(files_path)
+    #plot_two_subplots(os.path.basename(subdir_path))
+    
+
