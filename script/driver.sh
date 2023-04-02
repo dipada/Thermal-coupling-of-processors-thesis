@@ -20,6 +20,7 @@ readonly OUTPUT_DIR="$BASE_DIR/output"
 readonly SRC_DIR="$BASE_DIR/src"
 readonly DAT_DIR="$OUTPUT_DIR/dat-files"
 readonly REP_DIR="$OUTPUT_DIR/reports"
+readonly CSV_DIR="$OUTPUT_DIR/csv"
 readonly RES_DIR="$BASE_DIR/resources"
 readonly CONF_DIR="$RES_DIR/configuration"
 readonly SETTING_DIR="$RES_DIR/stock-settings"
@@ -163,11 +164,12 @@ do
       if [ $EXEC_MODE -eq 0 ]; then
       # constant load, variable frequency
       # 
+        echo "Starting swapper mode..."
         #trace-cmd record -P 0 -e sched_switch -f "prev_comm==\"rt-app\" || next_comm==\"rt-app\"" -e read_msr -f "msr==0x19c" -o $DAT_DIR/sw_$freq.dat rt-app $CONF_DIR/$2
         #exec trace-cmd report $DAT_DIR/sw_$freq.dat > $REP_DIR/sw_$freq.txt 
       else
         # rt-app mode
-        
+        echo "Starting rt-app mode..."
         trace-cmd record -P0 -P$read_msr_pid -e sched_switch -e read_msr -f "msr==0x19c" -o $DAT_DIR/sw_$freq.dat rt-app $CONF_DIR/$2
         exec trace-cmd report $DAT_DIR/sw_$freq.dat > $REP_DIR/sw_$freq.txt 
 
@@ -204,3 +206,16 @@ done
 wait
 
 echo -e "Done!\nFiles are in $(dirname $OUTPUT_DIR)/csv/$date directory"
+
+cd $CSV_DIR/$date
+
+for dir in * 
+do
+  python3 $SRC_DIR/plot/plotter.py "-s" "$date/$dir"&
+  echo "$date/$dir"
+  echo "plotting $dir"
+done
+
+$(chmod -R u+w $OUTPUT_DIR/plots/$date)
+
+wait
