@@ -48,8 +48,59 @@ def load_data(dir_path):
                 for row in reader:
                     temp_times[cpu].append(float(row[0]))
                     temp[cpu].append(int(row[1]))
-    
 
+# plot two subplots one for cpus temperature and one for cpus executions
+def plot_two_subplots(fig_name):
+
+    fig, ax = plt.subplots(2, sharex=True)
+    y_position = 0
+    height = 1
+
+    # plot executions
+    for cpu, start_time in start_times.items():
+        end_time = end_times[cpu]
+        exec_time = np.array(end_time) - np.array(start_time)
+
+        for start_time, duration in zip(start_time, exec_time):
+            ax[1].broken_barh([(start_time, duration)], (y_position, height))
+            
+        y_position += height
+
+    # plot temperatures
+    for cpu, cpu_time in temp_times.items():
+        cpu_temp = temp[cpu]        
+        ax[0].plot(cpu_time, cpu_temp, label=f"Temperature core {cpu}")
+
+
+    # set graph labels and title
+    plt.suptitle('Cores executions and temperatures')
+
+    ax[0].set_ylabel('Temperature (°C)')
+    ax[0].set_yscale('linear')
+
+    ax[1].set_xlabel('Timestamp')
+    ax[1].set_ylabel('Cores')
+    ax[1].set_yscale('linear')
+
+    # Set legends
+    box = ax[0].get_position()
+    ax[0].set_position([box.x0, box.y0, box.width * 0.66, box.height])
+
+    box = ax[1].get_position()
+    ax[1].set_position([box.x0, box.y0, box.width * 0.66, box.height])
+    
+    # Put legends to the right of the current axis of subplots
+    ax[0].legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    ax[1].legend(["Executions"], loc='center left', bbox_to_anchor=(1, 0.5))   
+
+    plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}.png"), dpi=2000)
+    plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}.pdf"))
+    plt.show()
+    
+    start_times.clear()
+    end_times.clear()
+    temp_times.clear()
+    temp.clear()
 
 print("Plotting...")
 print("Current directory: " + CURRENT_DIR)
