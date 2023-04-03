@@ -213,17 +213,20 @@ echo -e "Done!\nFiles are in $(dirname $OUTPUT_DIR)/csv/$date directory"
 
 
 # plot generated csv files
+file_name=$(basename $2)
+file_name=${file_name%.*}
+
 cd $CSV_DIR/$date
 
 for dir in * 
 do
-  python3 $SRC_DIR/plot/plotter.py "-s" "$date/$dir"&
+  python3 $SRC_DIR/plot/plotter.py "-s" "$date/$dir" "$file_name-"&
   echo "$date/$dir"
   echo "plotting $dir"
 done
 
-$(chmod -R u+w $OUTPUT_DIR/plots/$date)
-
 wait
 
-echo -e "Done!\nFiles are in $(dirname $OUTPUT_DIR)/plots/$date directory"
+$(chmod -R u+w "$OUTPUT_DIR/plots/$file_name-$date")
+
+echo -e "Done!\nFiles are in $(dirname $OUTPUT_DIR)/plots/$file_name-$date directory"
