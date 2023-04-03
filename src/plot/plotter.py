@@ -55,28 +55,34 @@ print("Plotting...")
 print("Current directory: " + CURRENT_DIR)
 print(os.path.basename(CURRENT_DIR))
 
-if len(sys.argv) < 2 or len(sys.argv) > 3:
+if len(sys.argv) < 2 or len(sys.argv) > 4:
     print("Usage: python plotter.py <path_to_dir> for plot multiple figures by all subdirectories")
     print("Usage: python plotter.py -s <path_to_dir> for plot single figure by directory")
+    print("Usage: python plotter.py <path_to_dir> <dir_PREFIX> will add prefix to directory name. Works too with -s option")
     print("Example: python plotter.py -s 01-01-2023-00-00-00/800Mhz/")
+    print("Example: python plotter.py 01-01-2023-00-00-00/800Mhz/ my_prefix_")
     exit(1)
 
-if sys.argv[1] == "-s": # if -s is passed, plot single figure using subdirectory
+if sys.argv[1] == "-s": # if -s is passed, plot single figure using subdirectories
     SINGLE_PLOT = True
     files_dir = os.path.basename(os.path.dirname(sys.argv[2]))
     subdir_to_plot = os.path.basename(sys.argv[2])
     #files_path = os.path.join(CSV_DIR, files_dir)
     files_path = os.path.join(os.path.join(CSV_DIR, files_dir), subdir_to_plot)
+    if len(sys.argv) == 4:    
+        files_dir = "".join([sys.argv[3],files_dir])
 else:                   # will plot multiple figures using all subdirectories 
     SINGLE_PLOT = False
     files_dir = sys.argv[1]
     files_path = os.path.join(CSV_DIR, files_dir)
+    if len(sys.argv) == 3:
+        files_dir = "".join([sys.argv[2],files_dir])
 
 if not os.path.exists(files_path):
     print("Directory " + files_dir + " does not exists")
     exit(1)
 
-# check if directorys for plots exists
+# check if directory for plots exists
 if not os.path.exists(PLOT_DIR):
     os.mkdir(PLOT_DIR)
 
