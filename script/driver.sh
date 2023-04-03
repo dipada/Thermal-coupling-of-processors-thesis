@@ -80,6 +80,10 @@ cd ..
 # compile if needed rdmsr
 make
 
+# cleaning old dat-files and reports
+rm -f $DAT_DIR/*
+rm -f $REP_DIR/*
+
 # Create dirs if not exits
 if [ ! -d "$OUTPUT_DIR" ]; then
   echo "...creating $(basename $OUTPUT_DIR) directory"
@@ -207,6 +211,8 @@ wait
 
 echo -e "Done!\nFiles are in $(dirname $OUTPUT_DIR)/csv/$date directory"
 
+
+# plot generated csv files
 cd $CSV_DIR/$date
 
 for dir in * 
@@ -219,3 +225,5 @@ done
 $(chmod -R u+w $OUTPUT_DIR/plots/$date)
 
 wait
+
+echo -e "Done!\nFiles are in $(dirname $OUTPUT_DIR)/plots/$date directory"
