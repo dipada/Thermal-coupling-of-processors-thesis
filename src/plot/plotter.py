@@ -105,7 +105,7 @@ def plot_two_subplots(fig_name):
     temp_times.clear()
     temp.clear()
 
-def plot_seven_sublots(fig_name):
+def plot_seven_sublots(fig_name, ignore_empty=False):
     #https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
     
     colors = list(mcolors.TABLEAU_COLORS)
@@ -135,23 +135,46 @@ def plot_seven_sublots(fig_name):
         ex.broken_barh(start_duration_list, (y_position, height), facecolors=colors[int(int(cpu)%len(colors))])
         y_position += height
 
-    # plot temperatures of all cpus in different subplots
-    for row in range(nrows-1):
-        for col in range(ncols):
-            if row == 0 and col == 0:
-                # cpu 0 temperature
-                if f"{((row*ncols)+col):03d}" in temp_times:
+
+    if ignore_empty == False:
+        # plot temperatures of all cpus in different subplots
+        for row in range(nrows-1):
+            for col in range(ncols):
+                if row == 0 and col == 0:
+                    # cpu 0 temperature
+                    if f"{((row*ncols)+col):03d}" in temp_times:
+                        tx0 = plt.subplot(gs[row, col], sharex=ex)
+                        tx0.plot(temp_times[f"{(row*ncols)+col:03d}"], temp[f"{(row*ncols)+col:03d}"], color=colors[((row*ncols)+col)%len(colors)])
+                else:
+                    if f"{((row*ncols)+col):03d}" in temp_times:
+                        tx = plt.subplot(gs[row, col], sharex=ex, sharey=tx0)
+                        tx.plot(temp_times[f"{(row*ncols)+col:03d}"], temp[f"{(row*ncols)+col:03d}"], color=colors[((row*ncols)+col)%len(colors)] ,label=f"Temperature core {(row*ncols)+col:03d}")
+
+    else:
+
+        # plot ignoring empty subplots          
+        cpu_id = 0
+        for row in range(nrows - 1):
+            for col in range(ncols):
+                # search for the first cpu that has temperature readings
+                while f"{cpu_id:03d}" not in temp_times and cpu_id < ncpu:
+                    cpu_id += 1
+
+                if cpu_id == len(start_times):
+                    break
+
+                if row == 0 and col == 0:
+                    # cpu 0 temperature
                     tx0 = plt.subplot(gs[row, col], sharex=ex)
-                    tx0.plot(temp_times[f"{(row*ncols)+col:03d}"], temp[f"{(row*ncols)+col:03d}"], color=colors[((row*ncols)+col)%len(colors)])
-            else:
-                if f"{((row*ncols)+col):03d}" in temp_times:
+                    tx0.plot(temp_times[f"{cpu_id:03d}"], temp[f"{cpu_id:03d}"], color=colors[cpu_id%len(colors)])
+                    print(f"{fig_name} --> row: {row}, col: {col}, cpu: {cpu_id:03d}")
+                else:
                     tx = plt.subplot(gs[row, col], sharex=ex, sharey=tx0)
-                    tx.plot(temp_times[f"{(row*ncols)+col:03d}"], temp[f"{(row*ncols)+col:03d}"], color=colors[((row*ncols)+col)%len(colors)] ,label=f"Temperature core {(row*ncols)+col:03d}")
-
-            print(f"{fig_name} --> row: {row}, col: {col}, cpu: {(row*ncols)+col:03d}")
-
-    
-    
+                    tx.plot(temp_times[f"{cpu_id:03d}"], temp[f"{cpu_id:03d}"], color=colors[cpu_id%len(colors)] ,label=f"Temperature core {cpu_id:03d}")
+                    print(f"{fig_name} --> row: {row}, col: {col}, cpu: {cpu_id:03d}")
+                
+                cpu_id += 1
+                
 
     # set graph labels and title
     plt.suptitle('Cores executions and temperatures')
@@ -205,7 +228,7 @@ if SINGLE_PLOT:
     load_data(files_path)
 
     #plot_two_subplots(subdir_to_plot)
-    plot_seven_sublots(subdir_to_plot)
+    plot_seven_sublots(subdir_to_plot, ignore_empty=False)
 else:
     for subdir in os.listdir(files_path):
         #print(f"FILES DIR {files_dir}")
