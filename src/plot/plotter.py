@@ -216,11 +216,20 @@ def plot_stacked_subplots(fig_name):
 
     ncpu = len(temp)
 
-    fig, ax = plt.subplots(ncpu+1, sharex=True)
+    nrows = ncpu + 1
 
+    hratios = [1] * (nrows-1) + [2]
+    wratios = [1]
+
+    #fig, ax = plt.subplots(ncpu+1, sharex=True)
     
+    fig = plt.figure()
+    gs = gridspec.GridSpec(nrows=nrows, ncols=1, height_ratios=hratios, width_ratios=wratios, hspace=0.3)
 
-
+    fig.set_size_inches(h=10, w=8)
+    
+    ex = plt.subplot(gs[nrows-1])
+    
     y_position = 0
     height = 1
 
@@ -231,11 +240,37 @@ def plot_stacked_subplots(fig_name):
 
         start_duration_list = list(zip(start_time, exec_time))
 
-        ax[ncpu].broken_barh(start_duration_list, (y_position, height), facecolors=colors[int(int(cpu)%len(colors))])
+        ex.broken_barh(start_duration_list, (y_position, height), facecolors=colors[int(int(cpu)%len(colors))], label=f"CPU {cpu}")
         
         y_position += height
     
-    plt.show()
+    ex.set_xlabel('Timestamp')
+    ex.set_ylabel('Cores')
+    
+    for row in range(nrows-1):
+        if row == 0:
+            # cpu 0 temperature
+            if f"{row:03d}" in temp_times:
+                tx0 = plt.subplot(gs[row], sharex=ex)
+                tx0.plot(temp_times[f"{row:03d}"], temp[f"{row:03d}"], color=colors[row%len(colors)])
+                tx0.yaxis.set_major_locator(ticker.MultipleLocator(2))
+                tx0.yaxis.set_minor_locator(ticker.MultipleLocator(1))
+                tx0.set_ylabel('Temperature (°C)')
+        else:
+            if f"{row:03d}" in temp_times:
+                tx = plt.subplot(gs[row], sharex=ex, sharey=tx0)
+                tx.plot(temp_times[f"{row:03d}"], temp[f"{row:03d}"], color=colors[row%len(colors)])
+                #tx.set_xticklabels([])
+    
+
+    #plt.legend(loc='best', bbox_to_anchor=(0.5, -0.5, 0.5, 0.5))
+    ex.legend(loc='upper center', bbox_to_anchor=(0.5, -0.3), fancybox=True, shadow=True, ncol=3)
+    
+    plt.suptitle('Cores executions and temperatures')
+    #plt.tight_layout()
+    #plt.show()
+    plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}.pdf"))
+    plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}.png"), dpi=2000)
 
 
 print("Plotting...")
