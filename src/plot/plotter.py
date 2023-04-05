@@ -210,6 +210,34 @@ def plot_seven_sublots(fig_name, ignore_empty=True):
    
     #plt.show()
 
+def plot_stacked_subplots(fig_name):
+    
+    colors = list(mcolors.TABLEAU_COLORS)
+
+    ncpu = len(temp)
+
+    fig, ax = plt.subplots(ncpu+1, sharex=True)
+
+    
+
+
+    y_position = 0
+    height = 1
+
+    for cpu, start_time in start_times.items():
+
+        end_time = end_times[cpu]
+        exec_time = np.array(end_time) - np.array(start_time)
+
+        start_duration_list = list(zip(start_time, exec_time))
+
+        ax[ncpu].broken_barh(start_duration_list, (y_position, height), facecolors=colors[int(int(cpu)%len(colors))])
+        
+        y_position += height
+    
+    plt.show()
+
+
 print("Plotting...")
 print("Current directory: " + CURRENT_DIR)
 print(os.path.basename(CURRENT_DIR))
@@ -254,7 +282,8 @@ if SINGLE_PLOT:
     load_data(files_path)
 
     #plot_two_subplots(subdir_to_plot)
-    plot_seven_sublots(subdir_to_plot, ignore_empty=False)
+    #plot_seven_sublots(subdir_to_plot, ignore_empty=False)
+    plot_stacked_subplots(subdir_to_plot)
 else:
     for subdir in os.listdir(files_path):
         #print(f"FILES DIR {files_dir}")
