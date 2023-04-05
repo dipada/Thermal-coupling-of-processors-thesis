@@ -4,6 +4,7 @@ import csv
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import matplotlib.colors as mcolors
 import numpy as np
 import math
 
@@ -107,6 +108,8 @@ def plot_two_subplots(fig_name):
 def plot_seven_sublots(fig_name):
     #https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
     
+    colors = list(mcolors.TABLEAU_COLORS)
+
     ncpu = len(temp)
     ncols = 2
     nrows = math.ceil(ncpu / ncols) + 1
@@ -129,8 +132,7 @@ def plot_seven_sublots(fig_name):
 
         start_duration_list = list(zip(start_time, exec_time))
 
-        ex.broken_barh(start_duration_list, (y_position, height))
-
+        ex.broken_barh(start_duration_list, (y_position, height), facecolors=colors[int(int(cpu)%len(colors))])
         y_position += height
 
     # plot temperatures of all cpus in different subplots
@@ -140,13 +142,13 @@ def plot_seven_sublots(fig_name):
                 # cpu 0 temperature
                 if f"{((row*ncols)+col):03d}" in temp_times:
                     tx0 = plt.subplot(gs[row, col], sharex=ex)
-                    tx0.plot(temp_times[f"{(row*ncols)+col:03d}"], temp[f"{(row*ncols)+col:03d}"])
+                    tx0.plot(temp_times[f"{(row*ncols)+col:03d}"], temp[f"{(row*ncols)+col:03d}"], color=colors[((row*ncols)+col)%len(colors)])
             else:
                 if f"{((row*ncols)+col):03d}" in temp_times:
-                    print(f"{fig_name} --> row: {row}, col: {col}, cpu: {(row*ncols)+col:03d}")
                     tx = plt.subplot(gs[row, col], sharex=ex, sharey=tx0)
-                    tx.plot(temp_times[f"{(row*ncols)+col:03d}"], temp[f"{(row*ncols)+col:03d}"], label=f"Temperature core {(row*ncols)+col:03d}")
-                    
+                    tx.plot(temp_times[f"{(row*ncols)+col:03d}"], temp[f"{(row*ncols)+col:03d}"], color=colors[((row*ncols)+col)%len(colors)] ,label=f"Temperature core {(row*ncols)+col:03d}")
+
+            print(f"{fig_name} --> row: {row}, col: {col}, cpu: {(row*ncols)+col:03d}")
 
     
     
