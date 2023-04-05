@@ -5,6 +5,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.colors as mcolors
+import matplotlib.ticker as ticker
 import numpy as np
 import math
 
@@ -105,7 +106,7 @@ def plot_two_subplots(fig_name):
     temp_times.clear()
     temp.clear()
 
-def plot_seven_sublots(fig_name, ignore_empty=False):
+def plot_seven_sublots(fig_name, ignore_empty=True):
     #https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
     
     colors = list(mcolors.TABLEAU_COLORS)
@@ -115,8 +116,12 @@ def plot_seven_sublots(fig_name, ignore_empty=False):
     nrows = math.ceil(ncpu / ncols) + 1
 
     fig = plt.figure()
+    #fig.set_size_inches(h=8, w=10)
     
-    gs = gridspec.GridSpec(nrows, ncols)
+    hratios = [0.6] * (nrows-1) + [1]
+    wratios = [1] * ncols 
+
+    gs = gridspec.GridSpec(nrows, ncols, height_ratios=hratios, width_ratios=wratios)
     
 
     # plot executions of all cpus
@@ -133,8 +138,19 @@ def plot_seven_sublots(fig_name, ignore_empty=False):
         start_duration_list = list(zip(start_time, exec_time))
 
         ex.broken_barh(start_duration_list, (y_position, height), facecolors=colors[int(int(cpu)%len(colors))])
-        y_position += height
+        
+        y_position += height    
+    
+    ex.xaxis.set_major_locator(ticker.MultipleLocator(2))
+    ex.xaxis.set_minor_locator(ticker.MultipleLocator(1))
+    ex.yaxis.set_major_locator(ticker.MultipleLocator(2))
+    ex.yaxis.set_minor_locator(ticker.MultipleLocator(1))
+    ex.set_xlabel('Timestamp')
+    ex.set_ylabel('Cores')
 
+    for cpu, start_time in start_times.items():
+        #ex.set_yticklabels([f"CPU {i}" for i in range(ncpu)])
+        pass
 
     if ignore_empty == False:
         # plot temperatures of all cpus in different subplots
@@ -145,11 +161,15 @@ def plot_seven_sublots(fig_name, ignore_empty=False):
                     if f"{((row*ncols)+col):03d}" in temp_times:
                         tx0 = plt.subplot(gs[row, col], sharex=ex)
                         tx0.plot(temp_times[f"{(row*ncols)+col:03d}"], temp[f"{(row*ncols)+col:03d}"], color=colors[((row*ncols)+col)%len(colors)])
+                        tx0.yaxis.set_major_locator(ticker.MultipleLocator(2))
+                        tx0.yaxis.set_minor_locator(ticker.MultipleLocator(1))
+                        tx0.set_ylabel('Temperature (°C)')
+                        #tx0.set_xticklabels([])
                 else:
                     if f"{((row*ncols)+col):03d}" in temp_times:
                         tx = plt.subplot(gs[row, col], sharex=ex, sharey=tx0)
-                        tx.plot(temp_times[f"{(row*ncols)+col:03d}"], temp[f"{(row*ncols)+col:03d}"], color=colors[((row*ncols)+col)%len(colors)] ,label=f"Temperature core {(row*ncols)+col:03d}")
-
+                        tx.plot(temp_times[f"{(row*ncols)+col:03d}"], temp[f"{(row*ncols)+col:03d}"], color=colors[((row*ncols)+col)%len(colors)])
+                        
     else:
 
         # plot ignoring empty subplots          
@@ -167,21 +187,27 @@ def plot_seven_sublots(fig_name, ignore_empty=False):
                     # cpu 0 temperature
                     tx0 = plt.subplot(gs[row, col], sharex=ex)
                     tx0.plot(temp_times[f"{cpu_id:03d}"], temp[f"{cpu_id:03d}"], color=colors[cpu_id%len(colors)])
+                    tx0.yaxis.set_major_locator(ticker.MultipleLocator(2))
+                    tx0.yaxis.set_minor_locator(ticker.MultipleLocator(1))
+                    tx0.set_ylabel('Temperature (°C)')
                     print(f"{fig_name} --> row: {row}, col: {col}, cpu: {cpu_id:03d}")
                 else:
                     tx = plt.subplot(gs[row, col], sharex=ex, sharey=tx0)
-                    tx.plot(temp_times[f"{cpu_id:03d}"], temp[f"{cpu_id:03d}"], color=colors[cpu_id%len(colors)] ,label=f"Temperature core {cpu_id:03d}")
+                    tx.plot(temp_times[f"{cpu_id:03d}"], temp[f"{cpu_id:03d}"], color=colors[cpu_id%len(colors)])
+                            #,label=f"Temperature core {cpu_id:03d}")"
                     print(f"{fig_name} --> row: {row}, col: {col}, cpu: {cpu_id:03d}")
                 
                 cpu_id += 1
-                
+
 
     # set graph labels and title
     plt.suptitle('Cores executions and temperatures')
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.tight_layout()
 
-    plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}.png"), dpi=2000)
     plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}.pdf"))
+    plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}.png"), dpi=2000)
+   
     #plt.show()
 
 print("Plotting...")
