@@ -3,6 +3,7 @@ import sys
 import csv
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 import numpy as np
 
 
@@ -95,12 +96,41 @@ def plot_two_subplots(fig_name):
 
     plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}.png"), dpi=2000)
     plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}.pdf"))
-    plt.show()
+    #plt.show()
     
     start_times.clear()
     end_times.clear()
     temp_times.clear()
     temp.clear()
+
+def plot_seven_sublots(fig_name):
+    #https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
+    
+    x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    y = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    z = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    m = [21 , 22, 23, 24, 25, 26, 27, 28, 29, 30]
+    n = [31 , 32, 33, 34, 35, 36, 37, 38, 39, 40]
+
+    fig = plt.figure()
+
+    gs = gridspec.GridSpec(4, 2, height_ratios=[1, 1, 1, 1], width_ratios=[ 1, 1])
+    
+    ax1 = plt.subplot(gs[0, 0])
+    ax2 = plt.subplot(gs[0, 1], sharex=ax1)
+    ax3 = plt.subplot(gs[1, 0], sharex=ax1)
+    ax4 = plt.subplot(gs[1, 1], sharex=ax1)
+    ax5 = plt.subplot(gs[2, 0], sharex=ax1)
+    ax6 = plt.subplot(gs[2, 1], sharex=ax1)
+    ax7 = plt.subplot(gs[3, :], sharex=ax1)
+    
+
+    ax1.plot(x, y)
+    ax1.set_title("main")
+    ax2.plot(x, z)
+    ax7.plot(n, m)
+
+    plt.show()
 
 print("Plotting...")
 print("Current directory: " + CURRENT_DIR)
@@ -145,7 +175,8 @@ if SINGLE_PLOT:
     #path = os.path.join(files_path, subdir_to_plot)
     load_data(files_path)
 
-    plot_two_subplots(subdir_to_plot)
+    #plot_two_subplots(subdir_to_plot)
+    plot_seven_sublots(subdir_to_plot)
 else:
     for subdir in os.listdir(files_path):
         #print(f"FILES DIR {files_dir}")
