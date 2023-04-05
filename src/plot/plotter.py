@@ -107,37 +107,57 @@ def plot_two_subplots(fig_name):
 def plot_seven_sublots(fig_name):
     #https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
     
-    x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    y = [1, 2, 3, 4, 5, 6, 7, 8, 9, 1000]
-    z = [11, 21, 31, 41, 51, 61, 71, 81, 91, 100]
-    m = [21 , 22, 23, 24, 25, 26, 27, 28, 29, 30]
-    n = [31 , 32, 33, 34, 35, 36, 37, 38, 39, 40]
-
-    ncpu = len(start_times)
+    ncpu = len(temp)
     ncols = 2
-    nrows = math.ceil(ncpu / ncols)
+    nrows = math.ceil(ncpu / ncols) + 1
 
     fig = plt.figure()
     
     gs = gridspec.GridSpec(nrows, ncols)
     
 
+    # plot executions of all cpus
     ex = plt.subplot(gs[nrows-1, :])
-    ex.plot(m, n)
 
+    y_position = 0
+    height = 1
+
+    for cpu, start_time in start_times.items():
+
+        end_time = end_times[cpu]
+        exec_time = np.array(end_time) - np.array(start_time)
+
+        start_duration_list = list(zip(start_time, exec_time))
+
+        ex.broken_barh(start_duration_list, (y_position, height))
+
+        y_position += height
+
+    # plot temperatures of all cpus in different subplots
     for row in range(nrows-1):
         for col in range(ncols):
             if row == 0 and col == 0:
-                tx = plt.subplot(gs[row, col], sharex=ex)
-                tx.plot(x, z)
+                # cpu 0 temperature
+                if f"{((row*ncols)+col):03d}" in temp_times:
+                    tx0 = plt.subplot(gs[row, col], sharex=ex)
+                    tx0.plot(temp_times[f"{(row*ncols)+col:03d}"], temp[f"{(row*ncols)+col:03d}"])
             else:
-                tx = plt.subplot(gs[row, col], sharex=ex, sharey=tx)
-                tx.plot(x, y)
+                if f"{((row*ncols)+col):03d}" in temp_times:
+                    print(f"{fig_name} --> row: {row}, col: {col}, cpu: {(row*ncols)+col:03d}")
+                    tx = plt.subplot(gs[row, col], sharex=ex, sharey=tx0)
+                    tx.plot(temp_times[f"{(row*ncols)+col:03d}"], temp[f"{(row*ncols)+col:03d}"], label=f"Temperature core {(row*ncols)+col:03d}")
+                    
 
     
+    
 
+    # set graph labels and title
+    plt.suptitle('Cores executions and temperatures')
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
-    plt.show()
+    plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}.png"), dpi=2000)
+    plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}.pdf"))
+    #plt.show()
 
 print("Plotting...")
 print("Current directory: " + CURRENT_DIR)
@@ -190,7 +210,8 @@ else:
     
         subdir_path = os.path.join(files_path, subdir)
         load_data(subdir_path)
-        plot_two_subplots(os.path.basename(subdir_path))
+        #plot_two_subplots(os.path.basename(subdir_path))
+        plot_seven_sublots(os.path.basename(subdir_path))
         print(subdir)
         print(subdir_path)
         print(files_path)
