@@ -26,6 +26,9 @@ readonly CONF_DIR="$RES_DIR/configuration"
 readonly SETTING_DIR="$RES_DIR/stock-settings"
 readonly RT_LOGS_DIR="$OUTPUT_DIR/rt-app-logs"
 
+readonly MSR_READING_INTERVAL_MS=10 # in ms
+readonly MSR_READING_NS=$(( $MSR_READING_INTERVAL_MS*1000000 )) # in ns
+
 EXEC_MODE=0  # 0 = constant load, variable frequency mode
              # 1 = rt-app mode
 
@@ -158,7 +161,7 @@ do
 
     ( # start read_msr program
       cd ..
-      exec ./bin/read_msr INF > /dev/null
+      exec ./bin/read_msr "INF" "$MSR_READING_NS" > /dev/null
     )&
     read_msr_pid=$!
 
@@ -202,6 +205,9 @@ restore_stock_configuration
 cd $REP_DIR
 date=$(date +%d-%m-%Y-%H-%M-%S)
 
+
+mkdir $CSV_DIR/$date
+
 for file in *.txt
 do
   python3 $SRC_DIR/parser/preprocessing.py "$file" "$date"&
@@ -216,13 +222,13 @@ echo -e "Done!\nFiles are in $(dirname $OUTPUT_DIR)/csv/$date directory"
 file_name=$(basename $2)
 file_name=${file_name%.*}
 
+
 cd $CSV_DIR/$date
 
 for dir in * 
 do
-  python3 $SRC_DIR/plot/plotter.py "-s" "$date/$dir" "$file_name-"&
-  echo "$date/$dir"
-  echo "plotting $dir"
+  running_freq=$(echo $dir | awk -F'_' '{print $2}')
+  python3 $SRC_DIR/plot/plotter.py "-s" "$date/$dir" "$file_name-" "-f $running_freq" "-c $file_name" "-r $MSR_READING_INTERVAL_MS"  > /dev/null &
 done
 
 wait
