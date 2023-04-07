@@ -5,13 +5,13 @@
 			"cpus" : [1],
 			"run" :   1000000,
 			"dl-runtime": 50000,
-			"dl-deadline": 100000,
-			"dl-period": 100000
+			"dl-deadline": 1000000,
+			"dl-period": 1000000
 		}
 	},
 	"global" : {
 		"duration" : 1,
-		"calibration" : 50,
+		"calibration" : 25,
 		"default_policy" : "SCHED_DEADLINE",
 		"pi_enabled" : false,
 		"lock_pages" : false,
