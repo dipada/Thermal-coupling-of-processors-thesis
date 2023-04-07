@@ -210,7 +210,7 @@ def plot_seven_sublots(fig_name, ignore_empty=True):
    
     #plt.show()
 
-def plot_stacked_subplots(fig_name):
+def plot_stacked_subplots(fig_name, running_freq=None, conf_name=None, reads_range=None):
     
     colors = list(mcolors.TABLEAU_COLORS)
 
@@ -220,13 +220,9 @@ def plot_stacked_subplots(fig_name):
 
     hratios = [1] * (nrows-1) + [2]
     wratios = [1]
-
-    #fig, ax = plt.subplots(ncpu+1, sharex=True)
     
-    fig = plt.figure()
-    gs = gridspec.GridSpec(nrows=nrows, ncols=1, height_ratios=hratios, width_ratios=wratios, hspace=0.3)
-
-    fig.set_size_inches(h=10, w=8)
+    fig = plt.figure(figsize=(8,8))
+    gs = gridspec.GridSpec(nrows=nrows, ncols=1, height_ratios=hratios, width_ratios=wratios)
     
     ex = plt.subplot(gs[nrows-1])
     
@@ -244,34 +240,53 @@ def plot_stacked_subplots(fig_name):
         
         y_position += height
     
-    ex.set_xlabel('Timestamp')
+    ex.set_xlabel('Timestamp (s)')
     ex.set_ylabel('Cores')
-    
+    ex.yaxis.set_major_locator(ticker.MultipleLocator(2))
+    ex.yaxis.set_minor_locator(ticker.MultipleLocator(1))
+    ex.xaxis.set_major_locator(ticker.MultipleLocator(1))
+    ex.xaxis.set_minor_locator(ticker.MultipleLocator(0.1))
+
+
     for row in range(nrows-1):
         if row == 0:
             # cpu 0 temperature
             if f"{row:03d}" in temp_times:
                 tx0 = plt.subplot(gs[row], sharex=ex)
                 tx0.plot(temp_times[f"{row:03d}"], temp[f"{row:03d}"], color=colors[row%len(colors)])
-                tx0.yaxis.set_major_locator(ticker.MultipleLocator(2))
                 tx0.yaxis.set_minor_locator(ticker.MultipleLocator(1))
                 tx0.set_ylabel('Temperature (°C)')
+                tx0.tick_params(axis='both', which='both', right=False, labelbottom=False)
         else:
             if f"{row:03d}" in temp_times:
                 tx = plt.subplot(gs[row], sharex=ex, sharey=tx0)
                 tx.plot(temp_times[f"{row:03d}"], temp[f"{row:03d}"], color=colors[row%len(colors)])
-                #tx.set_xticklabels([])
+                tx.tick_params(axis='both', which='both', right=False, labelbottom=False)
     
+    # Scaling last plot and insert legend and configuration text
+    pos = ex.get_position()
+    ex.set_position([pos.x0, pos.y0, pos.width, pos.height * 0.80])
+    #ex.legend( loc='upper left', bbox_to_anchor=(0, -0.5), ncol=3,)
+    ex.legend( loc='upper right', bbox_to_anchor=(1, -0.5), ncol=3,)
 
-    #plt.legend(loc='best', bbox_to_anchor=(0.5, -0.5, 0.5, 0.5))
-    ex.legend(loc='upper center', bbox_to_anchor=(0.5, -0.3), fancybox=True, shadow=True, ncol=3)
-    
+    # configuration text
+    if running_freq is not None or conf_name is not None or reads_range is not None:
+        param_txt = f"Parameters:\n"
+        if conf_name is not None:
+            param_txt += f"configuration: {conf_name}\n"
+        if running_freq is not None:
+            param_txt += f"Runned at: {running_freq} MHz\n"
+        if reads_range is not None:
+            param_txt += f"MSR readings range: {reads_range}\n"
+
+        ex.text(0, -0.5, param_txt, ha='left', va='top', transform=ex.transAxes)
+        #ex.text(1, -.5, param_txt, ha='right', va='top', transform=ex.transAxes)    
+
     plt.suptitle('Cores executions and temperatures')
-    #plt.tight_layout()
+    plt.tight_layout()
     #plt.show()
     plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}.pdf"))
     plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}.png"), dpi=2000)
-
 
 print("Plotting...")
 print("Current directory: " + CURRENT_DIR)
