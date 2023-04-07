@@ -10,7 +10,7 @@
 	},
 	"global" : {
 		"duration" : 1,
-		"calibration" : 50,
+		"calibration" : 25,
 		"default_policy" : "SCHED_OTHER",
 		"pi_enabled" : false,
 		"lock_pages" : false,

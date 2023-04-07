@@ -11,7 +11,7 @@
     },
     "global": {
         "duration" : 10,
-		"calibration" : 50,
+		"calibration" : 25,
 		"default_policy" : "SCHED_DEADLINE",
 		"pi_enabled" : false,
 		"lock_pages" : false,
