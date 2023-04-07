@@ -107,7 +107,7 @@ def plot_two_subplots(fig_name):
     temp_times.clear()
     temp.clear()
 
-def plot_seven_sublots(fig_name, ignore_empty=True):
+def plot_grid_sublots(fig_name, ignore_empty=True, running_freq=None, conf_name=None, reads_range=None):
     #https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
     
     colors = list(mcolors.TABLEAU_COLORS)
@@ -116,7 +116,7 @@ def plot_seven_sublots(fig_name, ignore_empty=True):
     ncols = 2
     nrows = math.ceil(ncpu / ncols) + 1
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(10, 8))
     #fig.set_size_inches(h=8, w=10)
     
     hratios = [0.6] * (nrows-1) + [1]
@@ -138,20 +138,16 @@ def plot_seven_sublots(fig_name, ignore_empty=True):
 
         start_duration_list = list(zip(start_time, exec_time))
 
-        ex.broken_barh(start_duration_list, (y_position, height), facecolors=colors[int(int(cpu)%len(colors))])
+        ex.broken_barh(start_duration_list, (y_position, height), facecolors=colors[int(int(cpu)%len(colors))], label=f"CPU {cpu}")
         
         y_position += height    
     
-    ex.xaxis.set_major_locator(ticker.MultipleLocator(2))
-    ex.xaxis.set_minor_locator(ticker.MultipleLocator(1))
+    #ex.xaxis.set_major_locator(ticker.MultipleLocator(2))
+    #ex.xaxis.set_minor_locator(ticker.MultipleLocator(1))
     ex.yaxis.set_major_locator(ticker.MultipleLocator(2))
     ex.yaxis.set_minor_locator(ticker.MultipleLocator(1))
-    ex.set_xlabel('Timestamp')
+    ex.set_xlabel('Timestamp (s)')
     ex.set_ylabel('Cores')
-
-    for cpu, start_time in start_times.items():
-        #ex.set_yticklabels([f"CPU {i}" for i in range(ncpu)])
-        pass
 
     if ignore_empty == False:
         # plot temperatures of all cpus in different subplots
@@ -162,15 +158,16 @@ def plot_seven_sublots(fig_name, ignore_empty=True):
                     if f"{((row*ncols)+col):03d}" in temp_times:
                         tx0 = plt.subplot(gs[row, col], sharex=ex)
                         tx0.plot(temp_times[f"{(row*ncols)+col:03d}"], temp[f"{(row*ncols)+col:03d}"], color=colors[((row*ncols)+col)%len(colors)])
-                        tx0.yaxis.set_major_locator(ticker.MultipleLocator(2))
+                        #tx0.yaxis.set_major_locator(ticker.MultipleLocator(2))
                         tx0.yaxis.set_minor_locator(ticker.MultipleLocator(1))
+                        tx0.yaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
                         tx0.set_ylabel('Temperature (°C)')
                         #tx0.set_xticklabels([])
                 else:
                     if f"{((row*ncols)+col):03d}" in temp_times:
                         tx = plt.subplot(gs[row, col], sharex=ex, sharey=tx0)
                         tx.plot(temp_times[f"{(row*ncols)+col:03d}"], temp[f"{(row*ncols)+col:03d}"], color=colors[((row*ncols)+col)%len(colors)])
-                        
+                        #tx.tick_params(axis='both', which='both', right=False, labelbottom=False)
     else:
 
         # plot ignoring empty subplots          
@@ -188,26 +185,44 @@ def plot_seven_sublots(fig_name, ignore_empty=True):
                     # cpu 0 temperature
                     tx0 = plt.subplot(gs[row, col], sharex=ex)
                     tx0.plot(temp_times[f"{cpu_id:03d}"], temp[f"{cpu_id:03d}"], color=colors[cpu_id%len(colors)])
-                    tx0.yaxis.set_major_locator(ticker.MultipleLocator(2))
+                    #tx0.yaxis.set_major_locator(ticker.MultipleLocator(2))
                     tx0.yaxis.set_minor_locator(ticker.MultipleLocator(1))
+                    tx0.yaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
                     tx0.set_ylabel('Temperature (°C)')
-                    print(f"{fig_name} --> row: {row}, col: {col}, cpu: {cpu_id:03d}")
+                    
                 else:
                     tx = plt.subplot(gs[row, col], sharex=ex, sharey=tx0)
                     tx.plot(temp_times[f"{cpu_id:03d}"], temp[f"{cpu_id:03d}"], color=colors[cpu_id%len(colors)])
-                            #,label=f"Temperature core {cpu_id:03d}")"
-                    print(f"{fig_name} --> row: {row}, col: {col}, cpu: {cpu_id:03d}")
-                
+                    #tx.tick_params(axis='both', which='both', right=False, labelbottom=False)
+                                    
                 cpu_id += 1
 
+    # Scaling last plot and insert legend and configuration text
+    pos = ex.get_position()
+    ex.set_position([pos.x0, pos.y0, pos.width, pos.height * 0.80])
+    #ex.legend( loc='upper left', bbox_to_anchor=(0, -0.5), ncol=3,)
+    ex.legend( loc='upper right', bbox_to_anchor=(1, -0.5), ncol=3,)
+
+    # configuration text
+    if running_freq is not None or conf_name is not None or reads_range is not None:
+        param_txt = f"Parameters:\n"
+        if conf_name is not None:
+            param_txt += f"configuration: {conf_name}\n"
+        if running_freq is not None:
+            param_txt += f"Runned at: {running_freq} MHz\n"
+        if reads_range is not None:
+            param_txt += f"MSR readings every: {reads_range} ms\n"
+
+        ex.text(0, -0.5, param_txt, ha='left', va='top', transform=ex.transAxes)
+        #ex.text(1, -.5, param_txt, ha='right', va='top', transform=ex.transAxes)    
 
     # set graph labels and title
     plt.suptitle('Cores executions and temperatures')
-    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    #plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.tight_layout()
 
-    plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}.pdf"))
-    plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}.png"), dpi=2000)
+    plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}_grid.pdf"))
+    plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}_grid.png"), dpi=2000)
    
     #plt.show()
 
@@ -245,8 +260,8 @@ def plot_stacked_subplots(fig_name, running_freq=None, conf_name=None, reads_ran
     ex.set_ylabel('Cores')
     ex.yaxis.set_major_locator(ticker.MultipleLocator(2))
     ex.yaxis.set_minor_locator(ticker.MultipleLocator(1))
-    ex.xaxis.set_major_locator(ticker.MultipleLocator(1))
-    ex.xaxis.set_minor_locator(ticker.MultipleLocator(0.1))
+    #ex.xaxis.set_major_locator(ticker.MultipleLocator(1))
+    #ex.xaxis.set_minor_locator(ticker.MultipleLocator(0.1))
 
 
     for row in range(nrows-1):
@@ -256,6 +271,7 @@ def plot_stacked_subplots(fig_name, running_freq=None, conf_name=None, reads_ran
                 tx0 = plt.subplot(gs[row], sharex=ex)
                 tx0.plot(temp_times[f"{row:03d}"], temp[f"{row:03d}"], color=colors[row%len(colors)])
                 tx0.yaxis.set_minor_locator(ticker.MultipleLocator(1))
+                tx0.yaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
                 tx0.set_ylabel('Temperature (°C)')
                 tx0.tick_params(axis='both', which='both', right=False, labelbottom=False)
         else:
@@ -278,7 +294,7 @@ def plot_stacked_subplots(fig_name, running_freq=None, conf_name=None, reads_ran
         if running_freq is not None:
             param_txt += f"Runned at: {running_freq} MHz\n"
         if reads_range is not None:
-            param_txt += f"MSR readings every: {reads_range}\n"
+            param_txt += f"MSR readings every: {reads_range} ms\n"
 
         ex.text(0, -0.5, param_txt, ha='left', va='top', transform=ex.transAxes)
         #ex.text(1, -.5, param_txt, ha='right', va='top', transform=ex.transAxes)    
@@ -286,8 +302,8 @@ def plot_stacked_subplots(fig_name, running_freq=None, conf_name=None, reads_ran
     plt.suptitle('Cores executions and temperatures')
     plt.tight_layout()
     #plt.show()
-    plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}.pdf"))
-    plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}.png"), dpi=2000)
+    plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}_stacked.pdf"))
+    plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}_stacked.png"), dpi=2000)
 
 
 parser = argparse.ArgumentParser(description="Plot temperature and execution times of a set of cpus.")
@@ -331,24 +347,19 @@ if not os.path.exists(os.path.join(PLOT_DIR, files_dir)):
 
 # loading and plotting data
 if SINGLE_PLOT:
-    #path = os.path.join(files_path, subdir_to_plot)
     load_data(files_path)
 
     #plot_two_subplots(subdir_to_plot)
-    #plot_seven_sublots(subdir_to_plot, ignore_empty=False)
-    plot_stacked_subplots(subdir_to_plot, running_freq, conf_name, reads_range)
+    plot_grid_sublots(subdir_to_plot, False, running_freq, conf_name, reads_range)
+    #plot_stacked_subplots(subdir_to_plot, running_freq, conf_name, reads_range)
 else:
     for subdir in os.listdir(files_path):
-        #print(f"FILES DIR {files_dir}")
-    
+            
         subdir_path = os.path.join(files_path, subdir)
         load_data(subdir_path)
         #plot_two_subplots(os.path.basename(subdir_path))
-        #plot_seven_sublots(os.path.basename(subdir_path))
-        plot_stacked_subplots(os.path.basename(subdir_path))
-        print(subdir)
-        print(subdir_path)
-        print(files_path)
-    #plot_two_subplots(os.path.basename(subdir_path))
+        #plot_grid_sublots(os.path.basename(subdir_path))
+        plot_stacked_subplots(os.path.basename(subdir_path), running_freq, conf_name, reads_range)
+    
     
 
