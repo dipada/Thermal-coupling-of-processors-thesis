@@ -8,6 +8,7 @@ import matplotlib.colors as mcolors
 import matplotlib.ticker as ticker
 import numpy as np
 import math
+import argparse
 
 
 CURRENT_DIR = os.path.dirname(__file__)
@@ -288,35 +289,30 @@ def plot_stacked_subplots(fig_name, running_freq=None, conf_name=None, reads_ran
     plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}.pdf"))
     plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}.png"), dpi=2000)
 
-print("Plotting...")
-print("Current directory: " + CURRENT_DIR)
-print(os.path.basename(CURRENT_DIR))
 
-if len(sys.argv) < 2 or len(sys.argv) > 4:
-    print("Usage: python plotter.py <path_to_dir> for plot multiple figures by all subdirectories")
-    print("Usage: python plotter.py -s <path_to_dir> for plot single figure by directory")
-    print("Usage: python plotter.py <path_to_dir> <dir_PREFIX> will add prefix to directory name. Works too with -s option")
-    print("Example: python plotter.py -s 01-01-2023-00-00-00/800Mhz/")
-    print("Example: python plotter.py 01-01-2023-00-00-00/800Mhz/ my_prefix_")
-    exit(1)
+parser = argparse.ArgumentParser(description="Plot temperature and execution times of a set of cpus.")
 
-if sys.argv[1] == "-s": # if -s is passed, plot single figure using subdirectories
-    SINGLE_PLOT = True
-    files_dir = os.path.basename(os.path.dirname(sys.argv[2]))
-    subdir_to_plot = os.path.basename(sys.argv[2])
-    #files_path = os.path.join(CSV_DIR, files_dir)
+# add arguments
+parser.add_argument("path_to_dir", help="path to parent directory of cpus directories")
+parser.add_argument("-s", "--single-plot", action="store_true", help="Just plot all subdirectories of a single directory")
+parser.add_argument("prefix", nargs="?", default="", help="Will add a prefix to the output directory name")
+
+# parse arguments
+args = parser.parse_args()
+
+SINGLE_PLOT = args.single_plot
+files_dir = args.path_to_dir
+files_path = os.path.join(CSV_DIR, files_dir)
+
+if SINGLE_PLOT:
+    subdir_to_plot = os.path.basename(files_dir)
+    files_dir = os.path.basename(os.path.dirname(files_dir))
     files_path = os.path.join(os.path.join(CSV_DIR, files_dir), subdir_to_plot)
-    if len(sys.argv) == 4:    
-        files_dir = "".join([sys.argv[3],files_dir])
-else:                   # will plot multiple figures using all subdirectories 
-    SINGLE_PLOT = False
-    files_dir = sys.argv[1]
-    files_path = os.path.join(CSV_DIR, files_dir)
-    if len(sys.argv) == 3:
-        files_dir = "".join([sys.argv[2],files_dir])
+
+files_dir = "".join([args.prefix, files_dir])
 
 if not os.path.exists(files_path):
-    print("Directory " + files_dir + " does not exists")
+    print(f"Directory {files_dir} does not exist")
     exit(1)
 
 # check if directory for plots exists
@@ -341,7 +337,8 @@ else:
         subdir_path = os.path.join(files_path, subdir)
         load_data(subdir_path)
         #plot_two_subplots(os.path.basename(subdir_path))
-        plot_seven_sublots(os.path.basename(subdir_path))
+        #plot_seven_sublots(os.path.basename(subdir_path))
+        plot_stacked_subplots(os.path.basename(subdir_path))
         print(subdir)
         print(subdir_path)
         print(files_path)
