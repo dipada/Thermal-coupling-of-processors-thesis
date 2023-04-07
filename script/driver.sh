@@ -225,6 +225,8 @@ file_name=${file_name%.*}
 
 cd $CSV_DIR/$date
 
+mkdir $OUTPUT_DIR/plots/$file_name-$date
+
 for dir in * 
 do
   running_freq=$(echo $dir | awk -F'_' '{print $2}')
