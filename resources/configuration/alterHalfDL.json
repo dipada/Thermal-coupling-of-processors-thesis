@@ -1,0 +1,22 @@
+{
+	"tasks" : {
+		"thread0" : {
+			"loop" : -1,
+			"cpus" : [1],
+			"run" :   500000,
+			"dl-runtime": 100000,
+			"dl-deadline": 200000,
+			"dl-period": 500000
+		}
+	},
+	"global" : {
+		"duration" : 1,
+		"calibration" : 25,
+		"default_policy" : "SCHED_DEADLINE",
+		"pi_enabled" : false,
+		"lock_pages" : false,
+		"logdir" : "output/rt-app-logs/",
+		"log_basename" : "single-Alternate-Half",
+		"gnuplot" : false
+	}
+}
