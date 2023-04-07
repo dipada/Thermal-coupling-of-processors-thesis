@@ -278,7 +278,7 @@ def plot_stacked_subplots(fig_name, running_freq=None, conf_name=None, reads_ran
         if running_freq is not None:
             param_txt += f"Runned at: {running_freq} MHz\n"
         if reads_range is not None:
-            param_txt += f"MSR readings range: {reads_range}\n"
+            param_txt += f"MSR readings every: {reads_range}\n"
 
         ex.text(0, -0.5, param_txt, ha='left', va='top', transform=ex.transAxes)
         #ex.text(1, -.5, param_txt, ha='right', va='top', transform=ex.transAxes)    
@@ -296,9 +296,16 @@ parser = argparse.ArgumentParser(description="Plot temperature and execution tim
 parser.add_argument("path_to_dir", help="path to parent directory of cpus directories")
 parser.add_argument("-s", "--single-plot", action="store_true", help="Just plot all subdirectories of a single directory")
 parser.add_argument("prefix", nargs="?", default="", help="Will add a prefix to the output directory name")
+parser.add_argument("-f", "--freq", nargs="?", default=None, help="Frequency at which the experiment was run")
+parser.add_argument("-c", "--conf", nargs="?", default=None, help="Configuration file name")
+parser.add_argument("-r", "--range-reads", nargs="?", default=None, help="MSR readings range")
 
 # parse arguments
 args = parser.parse_args()
+
+running_freq = args.freq
+conf_name = args.conf
+reads_range = args.range_reads
 
 SINGLE_PLOT = args.single_plot
 files_dir = args.path_to_dir
@@ -329,7 +336,7 @@ if SINGLE_PLOT:
 
     #plot_two_subplots(subdir_to_plot)
     #plot_seven_sublots(subdir_to_plot, ignore_empty=False)
-    plot_stacked_subplots(subdir_to_plot)
+    plot_stacked_subplots(subdir_to_plot, running_freq, conf_name, reads_range)
 else:
     for subdir in os.listdir(files_path):
         #print(f"FILES DIR {files_dir}")
