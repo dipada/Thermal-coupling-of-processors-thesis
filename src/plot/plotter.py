@@ -351,14 +351,14 @@ if SINGLE_PLOT:
 
     #plot_two_subplots(subdir_to_plot)
     plot_grid_sublots(subdir_to_plot, False, running_freq, conf_name, reads_range)
-    #plot_stacked_subplots(subdir_to_plot, running_freq, conf_name, reads_range)
+    plot_stacked_subplots(subdir_to_plot, running_freq, conf_name, reads_range)
 else:
     for subdir in os.listdir(files_path):
             
         subdir_path = os.path.join(files_path, subdir)
         load_data(subdir_path)
         #plot_two_subplots(os.path.basename(subdir_path))
-        #plot_grid_sublots(os.path.basename(subdir_path))
+        plot_grid_sublots(os.path.basename(subdir_path), False, running_freq, conf_name, reads_range)
         plot_stacked_subplots(os.path.basename(subdir_path), running_freq, conf_name, reads_range)
     
     
