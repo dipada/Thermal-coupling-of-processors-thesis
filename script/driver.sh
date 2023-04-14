@@ -141,7 +141,8 @@ echo "Frequency range ($MIN_FREQ_MHZ - $BASE_FREQ_MHZ MHz)"
 # Set sigint_handler as SIGINT handler 
 trap 'sigint_handler' SIGINT
 
-freq=$MIN_FREQ_MHZ
+#freq=$MIN_FREQ_MHZ
+freq=2500
 
 cd script
 # disabling turbo
@@ -153,17 +154,45 @@ cd script
 
 # execute tracing on rt-app on frequency range
 # every loop frequency will be increased by 100 mhz
-while [ $freq -le $BASE_FREQ_MHZ ]
+#BASE_FREQ_MHZ
+while [ $freq -le 2500 ]
 do
     echo "Actual $freq MHz - Target $BASE_FREQ_MHZ MHz"
 
     ./set_cpu_freq.sh $freq
 
-    ( # start read_msr program
-      cd ..
-      exec ./bin/read_msr "INF" "$MSR_READING_NS" > /dev/null
-    )&
-    read_msr_pid=$!
+    #( # start read_msr program
+    #  cd ..
+    #  exec chrt -f 99 ./bin/read_msr "INF" "$MSR_READING_NS" "0" #> /dev/null
+    #)&
+    #read_msr_pid=$!
+
+
+    # start read msr program on all cpus
+    n_cpus_act=$(nproc)
+    rd_msr_pids=()
+    
+    cd ..
+    for ((i=0; i<$n_cpus_act; i++))
+    do
+      echo -e "\nStarting read_msr on [CPU $i]"
+      exec ./bin/read_msr "INF" "$MSR_READING_NS" "$i"&
+      rd_msr_pids+=($!)
+
+      echo -e "\nSetting scheduling policy"
+      chrt -f -p 50 $!
+      chrt -p $!
+      
+      echo -e "\nSetting cpu affinity"
+      
+      mask=$((1 << i))
+      taskset -p "$mask" "$!"
+      printf "pid $! affinity [cpu $i] - mask [0x%x]\n" $mask
+
+      #exec chrt -f 99 taskset -c $i ./bin/read_msr "INF" "$MSR_READING_NS" "$i" & # > /dev/null &
+    done
+
+    cd script
 
     (
       cd ..
@@ -171,13 +200,22 @@ do
       if [ $EXEC_MODE -eq 0 ]; then
       # constant load, variable frequency
       # 
-        echo "Starting swapper mode..."
+        echo "Starting freq mode..."
         #trace-cmd record -P 0 -e sched_switch -f "prev_comm==\"rt-app\" || next_comm==\"rt-app\"" -e read_msr -f "msr==0x19c" -o $DAT_DIR/sw_$freq.dat rt-app $CONF_DIR/$2
         #exec trace-cmd report $DAT_DIR/sw_$freq.dat > $REP_DIR/sw_$freq.txt 
       else
         # rt-app mode
         echo "Starting rt-app mode..."
-        trace-cmd record -P0 -P$read_msr_pid -e sched_switch -e read_msr -f "msr==0x19c" -o $DAT_DIR/sw_$freq.dat rt-app $CONF_DIR/$2
+        
+        # pid list for trace-cmd trace
+        pids_list=""
+        for pid in "${rd_msr_pids[@]}"; do
+          pids_list="$pids_list -P $pid"
+        done
+        echo "$pids_list"
+
+        chrt -f 80 trace-cmd record -P0 $pids_list -e sched_switch -e read_msr -f "msr==0x19c" -o $DAT_DIR/sw_$freq.dat rt-app $CONF_DIR/$2
+        #trace-cmd record -P0 -P$read_msr_pid -e sched_switch -e read_msr -f "msr==0x19c" -o $DAT_DIR/sw_$freq.dat rt-app $CONF_DIR/$2
         exec trace-cmd report $DAT_DIR/sw_$freq.dat > $REP_DIR/sw_$freq.txt 
 
       fi      
@@ -187,8 +225,17 @@ do
     
     wait $trace_pid
     
-    kill -SIGINT $read_msr_pid
-    wait $read_msr_pid
+    echo "Stopping read_msr programs..."
+    for pid in ${rd_msr_pids[@]}
+    do
+      printf "Killing $pid..."
+      kill -SIGINT $pid
+      wait $pid
+      printf " Done\n"
+    done
+
+    #kill -SIGINT $read_msr_pid
+    #wait $read_msr_pid
     
     echo -e "\n\n< Cooling the engines >\n\n"
     sleep 3  
