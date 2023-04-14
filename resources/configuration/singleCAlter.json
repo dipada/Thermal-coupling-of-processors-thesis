@@ -2,15 +2,20 @@
 	"tasks" : {
 		"thread0" : {
 			"loop" : -1,
-            "cpus": [1],
-            "priority" : 0,
-			"run" :   20000,
-			"sleep" : 80000
+            "cpus": [0],
+			"run" : 500000,
+			"sleep" : 500000
+		},
+		"thread1" : {
+			"loop" : -1,
+            "cpus": [2],
+			"run" : 400000,
+			"sleep" : 400000
 		}
 	},
 	"global" : {
-		"duration" : 1,
-		"calibration" : 25,
+		"duration" : 10,
+		"calibration" : "CPU0",
 		"default_policy" : "SCHED_OTHER",
 		"pi_enabled" : false,
 		"lock_pages" : false,
