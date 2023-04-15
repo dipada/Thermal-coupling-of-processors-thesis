@@ -26,7 +26,7 @@ readonly CONF_DIR="$RES_DIR/configuration"
 readonly SETTING_DIR="$RES_DIR/stock-settings"
 readonly RT_LOGS_DIR="$OUTPUT_DIR/rt-app-logs"
 
-readonly MSR_READING_INTERVAL_MS=10 # in ms
+readonly MSR_READING_INTERVAL_MS=1 # in ms
 readonly MSR_READING_NS=$(( $MSR_READING_INTERVAL_MS*1000000 )) # in ns
 
 EXEC_MODE=0  # 0 = constant load, variable frequency mode
@@ -176,7 +176,8 @@ do
     for ((i=0; i<$n_cpus_act; i++))
     do
       echo -e "\nStarting read_msr on [CPU $i]"
-      exec ./bin/read_msr "INF" "$MSR_READING_NS" "$i"&
+      #exec ./bin/read_msr "INF" "$MSR_READING_NS" "$i"&
+      exec ./bin/read_msr "-U" "-r$MSR_READING_NS" "-c$i"&
       rd_msr_pids+=($!)
 
       echo -e "\nSetting scheduling policy"
