@@ -9,14 +9,15 @@
 #define MSR_TERM_STATUS 0x19c        // cpus temp
 #define MSR_TEMPERATURE_TARGET 0x1a2 // for TjMax
 #define PATH_MSR_FILE "/dev/cpu/%d/msr"
-#define PRINT_USAGE   printf("Usage: \n(1) rdmsr for start program with default values              \
-                      \n(2) rdmsr ExecutionTime-(opt) readMsrEveryNanoSecs-(opt)                    \
-                      \n(3) rdmsr INF-(unbounded execution) readMsrEveryNanoSecs-(opt)\n            \
-                      \n(4) rdmsr INF-(unbounded execution) readMsrEveryNanoSecs-(opt) cpu-(opt)"); \
-                      exit(EXIT_FAILURE);
+#define PRINT_USAGE fprintf(stderr, "Usage: %s [ -U | -e secs ] [ -r nanosecs ] [ -c ncpu ]             \
+                                                \n-U unbounded execution                                \
+                                                \n-e execution time                                     \
+                                                \n-r reads frequency                                    \
+                                                \n-c cpu for msr reads\n", argv[0]); exit(EXIT_FAILURE);
 #define UNBOUNDED "INF"
-#define DEFAULT_READ 100000000
+#define DEFAULT_READ_NS 100000000  // 100ms default read msr
 #define DEFAULT_DURATION 5
+#define NANOSEC_LIMIT 999999999
 #define READ_ALL_CPUS -1
 
 int main(int argc, char **argv){
@@ -30,52 +31,74 @@ int main(int argc, char **argv){
   
   typedef enum {false, true} bool;
   bool unbounded = false;
+  bool user_duration = false;
 
   time_t duration_secs;   // time of program running
      
   struct timespec read_nanosecs;  // time every read occour
   read_nanosecs.tv_sec = 0;
-  read_nanosecs.tv_nsec = 0;
+  read_nanosecs.tv_nsec = DEFAULT_READ_NS;
   
   char *end;
   int rd_cpu = READ_ALL_CPUS;
 
-  if(argv[1] != NULL){
-    if(strcmp(argv[1],UNBOUNDED) == 0){
-      unbounded = true;
-    }else{
+  int opt;
 
-    duration_secs = strtol(argv[1], &end, 10);
+  while ((opt = getopt(argc, argv, "Ue:r:c:")) != -1){
     
-    if(*end != '\0'){
-      PRINT_USAGE
+    switch (opt){
+      case 'U': // unbounded execution
+        unbounded = true;
+        printf("Unbounded execution\n");
+        break;
+
+      case 'e': // user defined execution time
+        duration_secs = strtol(optarg, &end, 10);
+        if(*end != '\0'){
+          PRINT_USAGE
+        }
+        
+        user_duration = true;
+
+        printf("Execution time: %ld secs\n", duration_secs);
+        break;
+
+      case 'r': // user defined read msr time
+        long nanosecs = strtol(optarg, &end, 10);
+        if(*end != '\0'){
+          PRINT_USAGE
+        }
+        while (nanosecs > NANOSEC_LIMIT){
+          read_nanosecs.tv_sec += 1;
+          nanosecs -= NANOSEC_LIMIT;
+        }
+        read_nanosecs.tv_nsec = nanosecs;      
+
+        printf("Read msr every %ld secs and %ld nanosecs\n", read_nanosecs.tv_sec, read_nanosecs.tv_nsec);
+        break;
+
+      case 'c': // user defined cpu to read msr
+        rd_cpu = strtol(optarg, &end, 10);
+        if(*end != '\0'){
+          PRINT_USAGE
+        }
+        printf("Read msr of CPU %d\n", rd_cpu);
+        break;
+
+      default: /* '?' */
+        PRINT_USAGE
     }
-  }
-  }else{ // default value, run for 5 secs
-    printf("Setting duration time to %d secs\n", DEFAULT_DURATION);
-    duration_secs = DEFAULT_DURATION;
   }
 
-  if(argc == 3 && argv[2] != NULL){
-    end = NULL;
-    read_nanosecs.tv_nsec = strtol(argv[2], &end, 10);
-    if(*end != '\0'){
-      PRINT_USAGE
-    }
-  }else{ // default value, reads msr every 1 ms
-    printf("Setting reads of MSRs every %dns\n", DEFAULT_READ);
-    read_nanosecs.tv_nsec = 50000000;
+  if (optind < argc){
+    PRINT_USAGE
   }
 
-  if(argc == 4 && argv[3] != NULL){
-    end = NULL;
-    rd_cpu = strtol(argv[3], &end, 10);
-    if(*end != '\0'){
-      PRINT_USAGE
-    }
+  if (user_duration && unbounded){
+    printf("Can't set unbounded execution and time for execution at the same time\n");
+    PRINT_USAGE
   }
   
-  read_nanosecs.tv_nsec = 50000000;
   
   time_t start_time = time(NULL);
 
