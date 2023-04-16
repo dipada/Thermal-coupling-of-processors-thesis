@@ -11,7 +11,7 @@ RES_DIR = os.path.join(BASE_DIR, "resources/configuration/")
 def fill_global_obj(cpu, duration, calibration, default_policy):
   
     global_obj = {
-        "duration" : duration,
+        "duration" : int(duration),
         "calibration" : calibration,
         "default_policy" : default_policy,
         "pi_enabled" : False,
@@ -26,37 +26,12 @@ def fill_global_obj(cpu, duration, calibration, default_policy):
 def fill_thread_obj(loop, cpu_affinity, run, sleep):
     thread_obj = {
         "loop" : loop,
-        "cpus": f"[{cpu_affinity}]",
+        "cpus": [cpu_affinity],
         "run" : run,
         "sleep" : sleep
     }
 
     return thread_obj
-
-#final_json = {
-#	"tasks" : {
-#		"thread0" : thread_obj
-#	},
-#	"global" : 9
-#}
-
-#for i in range(1, 2):
-#    final_json["tasks"][f"thread{i}"] = thread_obj
-
-
-#with open(f'{RES_DIR}/test.json', 'w') as outfile:
-    #json.dump(final_json, indent=4, fp=outfile)
-
-def make_json(duration):
-    global global_obj
-    global final_json
-
-    global_obj["duration"] = duration
-
-    final_json["global"] = global_obj
-
-    for i in range(1, 2):
-        final_json["tasks"][f"thread{i}"] = thread_obj
 
 def global_obj_data(user_data):
     
@@ -159,32 +134,37 @@ def collect_data():
     return user_data
 
 
+def build_json(user_values):
+    final_json = {
+    	"tasks" : {
+    		
+    	},
+    }
+    
+    json_name = ""
+
+    json_name = f"cpu{user_values['cpu']}"
+    global_obj = fill_global_obj(user_values["cpu"], user_values["global_duration"], user_values["calibration"], user_values["global_default_policy"] )
+    
+    for i in range(0, int(user_values["num_threads"])): # build thread objects
+        thread_obj = fill_thread_obj(user_values[f"thread_loop{i}"], user_values[f"thread_cpu_affinity{i}"], user_values[f"thread_run{i}"], user_values[f"thread_sleep{i}"])
+        final_json["tasks"][f"thread{i}"] = thread_obj
+    json_name = json_name + f"-{user_values['global_duration']}s.json"
+
+    final_json["global"] = global_obj
+    
+    # save json file
+    with open(json_name, "w") as f:
+        json.dump(final_json, f, indent=4)
+
 if __name__ == "__main__":
 
     user_values = collect_data()
 
-    json_name = ""
-
     if(user_values["single_json"]): # Single json file generation
-        json_name = f"cpu{user_values['cpu']}"
-        global_obj = fill_global_obj(user_values["cpu"], user_values["global_duration"], user_values["calibration"], user_values["global_default_policy"] )
-        
-        for i in range(0, int(user_values["num_threads"])):
-            thread_obj = fill_thread_obj(user_values[f"thread_loop{i}"], user_values[f"thread_cpu_affinity{i}"], user_values[f"thread_run{i}"], user_values[f"thread_sleep{i}"])
-            print(json.dumps(thread_obj, indent=4))
-            print("\n\n")
-        json_name = json_name + f"-{user_values['global_duration']}s.json"
-        print(json_name)
-        print("\n\n")
-        print(json.dumps(global_obj, indent=4))
-        print("\n\n")
-        
+        final_json = build_json(user_values)
+
     else:
-        for i in range(0, int(user_values["cpu"])):
-            json_name = f"cpu{i}"
-            global_obj = fill_global_obj(i, user_values["global_duration"], user_values["calibration"], user_values["global_default_policy"])
-            json_name = json_name + f"-{user_values['duration']}s.json"
-            print(json_name)
-            print("\n\n")
-            print(json.dumps(global_obj, indent=4))
+        for i in range(0, int(user_values["cpu"])): # Multiple json with different affinity cpu number generation
+            final_json = build_json(user_values)
 
