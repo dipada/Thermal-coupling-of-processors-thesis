@@ -17,25 +17,38 @@ fi
 for file in $CONF_DIR/singleCore2sec/*
 do
   ./driver.sh -rt "/$(basename $(dirname $file))/$(basename $file)"
+  sleep 2
 done
+
+sleep 8
 
 for file in $CONF_DIR/singleCore1sec/*
 do
   ./driver.sh -rt "/$(basename $(dirname $file))/$(basename $file)"
+  sleep 2
 done
+
+sleep 8
 
 for file in $CONF_DIR/singleCore500ms/*
 do
   ./driver.sh -rt "/$(basename $(dirname $file))/$(basename $file)"
+  sleep 2
 done
+
+sleep 8
 
 for file in $CONF_DIR/singleCore200ms/*
 do
   ./driver.sh -rt "/$(basename $(dirname $file))/$(basename $file)"
+  sleep 2
 done
+
+sleep 8
 
 for file in $CONF_DIR/singleCore100ms/*
 do
   ./driver.sh -rt "/$(basename $(dirname $file))/$(basename $file)"
+  sleep 2
 done
 
