@@ -26,7 +26,7 @@ readonly CONF_DIR="$RES_DIR/configuration"
 readonly SETTING_DIR="$RES_DIR/stock-settings"
 readonly RT_LOGS_DIR="$OUTPUT_DIR/rt-app-logs"
 
-readonly MSR_READING_INTERVAL_MS=1 # in ms
+readonly MSR_READING_INTERVAL_MS=10 # in ms
 readonly MSR_READING_NS=$(( $MSR_READING_INTERVAL_MS*1000000 )) # in ns
 
 EXEC_MODE=0  # 0 = constant load, variable frequency mode
