@@ -14,6 +14,28 @@ then
   exit $E_NOTROOT
 fi
 
-for file in $CONF_DIR/singleCore/*.json; do
-    echo $file
+for file in $CONF_DIR/singleCore2sec/*
+do
+  ./driver.sh -rt "/$(basename $(dirname $file))/$(basename $file)"
 done
+
+for file in $CONF_DIR/singleCore1sec/*
+do
+  ./driver.sh -rt "/$(basename $(dirname $file))/$(basename $file)"
+done
+
+for file in $CONF_DIR/singleCore500ms/*
+do
+  ./driver.sh -rt "/$(basename $(dirname $file))/$(basename $file)"
+done
+
+for file in $CONF_DIR/singleCore200ms/*
+do
+  ./driver.sh -rt "/$(basename $(dirname $file))/$(basename $file)"
+done
+
+for file in $CONF_DIR/singleCore100ms/*
+do
+  ./driver.sh -rt "/$(basename $(dirname $file))/$(basename $file)"
+done
+
