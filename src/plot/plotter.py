@@ -222,7 +222,7 @@ def plot_grid_sublots(fig_name, ignore_empty=True, running_freq=None, conf_name=
     plt.tight_layout()
 
     plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}_grid.pdf"))
-    plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}_grid.png"), dpi=2000)
+    #plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}_grid.png"), dpi=2000)
    
     #plt.show()
 
@@ -269,7 +269,7 @@ def plot_stacked_subplots(fig_name, running_freq=None, conf_name=None, reads_ran
             # cpu 0 temperature
             if f"{row:03d}" in temp_times:
                 tx0 = plt.subplot(gs[row], sharex=ex)
-                tx0.plot(temp_times[f"{row:03d}"], temp[f"{row:03d}"], color=colors[row%len(colors)])
+                tx0.plot(temp_times[f"{row:03d}"], temp[f"{row:03d}"], color=colors[row%len(colors)], marker='.')
                 tx0.yaxis.set_minor_locator(ticker.MultipleLocator(1))
                 tx0.yaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
                 tx0.set_ylabel('Temperature (°C)')
@@ -277,7 +277,7 @@ def plot_stacked_subplots(fig_name, running_freq=None, conf_name=None, reads_ran
         else:
             if f"{row:03d}" in temp_times:
                 tx = plt.subplot(gs[row], sharex=ex, sharey=tx0)
-                tx.plot(temp_times[f"{row:03d}"], temp[f"{row:03d}"], color=colors[row%len(colors)])
+                tx.plot(temp_times[f"{row:03d}"], temp[f"{row:03d}"], color=colors[row%len(colors)], marker='.')
                 tx.tick_params(axis='both', which='both', right=False, labelbottom=False)
     
     # Scaling last plot and insert legend and configuration text
@@ -303,7 +303,8 @@ def plot_stacked_subplots(fig_name, running_freq=None, conf_name=None, reads_ran
     plt.tight_layout()
     #plt.show()
     plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}_stacked.pdf"))
-    plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}_stacked.png"), dpi=2000)
+    #plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}_stacked.svg"))
+    #plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}_stacked.png"), dpi=2000)
 
 
 parser = argparse.ArgumentParser(description="Plot temperature and execution times of a set of cpus.")
@@ -350,7 +351,7 @@ if SINGLE_PLOT:
     load_data(files_path)
 
     #plot_two_subplots(subdir_to_plot)
-    plot_grid_sublots(subdir_to_plot, False, running_freq, conf_name, reads_range)
+    #plot_grid_sublots(subdir_to_plot, False, running_freq, conf_name, reads_range)
     plot_stacked_subplots(subdir_to_plot, running_freq, conf_name, reads_range)
 else:
     for subdir in os.listdir(files_path):
