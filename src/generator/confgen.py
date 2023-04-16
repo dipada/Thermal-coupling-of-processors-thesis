@@ -87,7 +87,7 @@ def global_obj_data(user_data):
     user_data["calibration"] = calibration
     user_data["global_default_policy"] = sched_policy
 
-def thread_obj_data(user_data):
+def thread_obj_data(user_data, nthread):
     # Thread object default values
     default_thread_loop = -1
     default_cpu_affinity = 0
@@ -114,10 +114,10 @@ def thread_obj_data(user_data):
         print(f"Invalid sleep value, using default value {default_thread_sleep}")
         sleep = default_thread_sleep
 
-    user_data["thread_loop"] = loop
-    user_data["thread_cpu_affinity"] = cpu_affinity
-    user_data["thread_run"] = run
-    user_data["thread_sleep"] = sleep
+    user_data[f"thread_loop{nthread}"] = loop
+    user_data[f"thread_cpu_affinity{nthread}"] = cpu_affinity
+    user_data[f"thread_run{nthread}"] = run
+    user_data[f"thread_sleep{nthread}"] = sleep
 
 
 
@@ -140,15 +140,21 @@ def collect_data():
         print("Invalid CPU number")
         exit(1)
 
+    user_data["single_json"] = single_json_generation
+    user_data["cpu"] = cpu
+
     # Global object values
     global_obj_data(user_data)
 
     # thread object values
-    thread_obj_data(user_data)
-
-    user_data["single_json"] = single_json_generation
-    user_data["cpu"] = cpu
+    nthread = 0
+    while True:
+        thread_obj_data(user_data, nthread)
+        nthread += 1
+        if input("Do you want to add another thread? (y/n): ") == "n":
+            break
     
+    user_data["num_threads"] = nthread  
 
     return user_data
 
@@ -162,18 +168,22 @@ if __name__ == "__main__":
     if(user_values["single_json"]): # Single json file generation
         json_name = f"cpu{user_values['cpu']}"
         global_obj = fill_global_obj(user_values["cpu"], user_values["global_duration"], user_values["calibration"], user_values["global_default_policy"] )
-        thread_obj = fill_thread_obj(user_values["thread_loop"], user_values["thread_cpu_affinity"], user_values["thread_run"], user_values["thread_sleep"])
-        json_name = json_name + f"-{global_obj['duration']}s.json"
+        
+        for i in range(0, int(user_values["num_threads"])):
+            thread_obj = fill_thread_obj(user_values[f"thread_loop{i}"], user_values[f"thread_cpu_affinity{i}"], user_values[f"thread_run{i}"], user_values[f"thread_sleep{i}"])
+            print(json.dumps(thread_obj, indent=4))
+            print("\n\n")
+        json_name = json_name + f"-{user_values['global_duration']}s.json"
         print(json_name)
         print("\n\n")
         print(json.dumps(global_obj, indent=4))
         print("\n\n")
-        print(json.dumps(thread_obj, indent=4))
+        
     else:
         for i in range(0, int(user_values["cpu"])):
             json_name = f"cpu{i}"
             global_obj = fill_global_obj(i, user_values["global_duration"], user_values["calibration"], user_values["global_default_policy"])
-            json_name = json_name + f"-{global_obj['duration']}s.json"
+            json_name = json_name + f"-{user_values['duration']}s.json"
             print(json_name)
             print("\n\n")
             print(json.dumps(global_obj, indent=4))
