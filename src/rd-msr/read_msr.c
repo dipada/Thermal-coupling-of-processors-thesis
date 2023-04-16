@@ -20,6 +20,9 @@
 #define NANOSEC_LIMIT 999999999
 #define READ_ALL_CPUS -1
 
+extern char *optarg;
+extern int optind;
+
 int main(int argc, char **argv){
   int fd;
   uint64_t tj_max;
