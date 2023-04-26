@@ -8,11 +8,19 @@ readonly BASE_DIR=$(dirname $(pwd))
 readonly RES_DIR="$BASE_DIR/resources"
 readonly CONF_DIR="$RES_DIR/configuration"
 
+function sigint_handler() {
+    trap - SIGINT
+    exit 0
+}
+
 if [ "$UID" -ne "$ROOT_UID" ]
 then
   echo "Must be root to run this script."
   exit $E_NOTROOT
 fi
+
+# Set sigint_handler as SIGINT handler 
+trap 'sigint_handler' SIGINT
 
 for file in $CONF_DIR/singleCore2sec/*
 do
