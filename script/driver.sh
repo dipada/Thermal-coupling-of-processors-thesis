@@ -29,9 +29,6 @@ readonly RT_LOGS_DIR="$OUTPUT_DIR/rt-app-logs"
 readonly MSR_READING_INTERVAL_MS=10 # in ms
 readonly MSR_READING_NS=$(( $MSR_READING_INTERVAL_MS*1000000 )) # in ns
 
-EXEC_MODE=0  # 0 = constant load, variable frequency mode
-             # 1 = rt-app mode
-
 function sigint_handler() {
     echo -e "\nRestoring stock configuration..."
     restore_stock_configuration
@@ -56,27 +53,18 @@ function restore_stock_configuration(){
 
 
 # -rt option start rt-app mode and need a configuration file
-# if no option is passed swapper mode is started
 
-if [ $# -eq 0 ]; then
-  echo "Starting constant load variable frequency mode ..."
-  EXEC_MODE=0
-elif [ $1 == "-rt" ]; then
-  echo "Starting rt-app mode ..."
-  if [ $# -ne 2 ] || [ ! -f $CONF_DIR/$2 ]; then
+if [ $# -eq 2 ] && [ $1 == "-rt" ]; then
+  if [ ! -f $CONF_DIR/$2 ]; then
     echo -e "Error: input file not found\nMake sure the file exists in $(basename $CONF_DIR)/"
     exit 1
   else
     echo "... loading configuration file $2 ..."
-    EXEC_MODE=1
   fi 
 else
   echo -e "Usage: $0\n$0 [-rt <input_file>]"
   exit 1
 fi
-
-
-# TODO signal Handler SIGINT
 
 cd ..
 
@@ -123,7 +111,7 @@ if [ ! -d "$RT_LOGS_DIR" ]; then
   mkdir "$RT_LOGS_DIR"
 fi
 
-# Save current configuration
+# Save current cpu configuration
 echo "Saving current CPU configuration..."
 echo "min freq $(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq | awk '{print $1/1000}')" > $SETTING_DIR/stock_settings.txt
 echo "max freq $(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq | awk '{print $1/1000}')" >> $SETTING_DIR/stock_settings.txt
@@ -161,13 +149,6 @@ do
 
     ./set_cpu_freq.sh $freq
 
-    #( # start read_msr program
-    #  cd ..
-    #  exec chrt -f 99 ./bin/read_msr "INF" "$MSR_READING_NS" "0" #> /dev/null
-    #)&
-    #read_msr_pid=$!
-
-
     # start read msr program on all cpus
     n_cpus_act=$(nproc)
     rd_msr_pids=()
@@ -175,8 +156,8 @@ do
     cd ..
     for ((i=0; i<$n_cpus_act; i++))
     do
+      
       echo -e "\nStarting read_msr on [CPU $i]"
-      #exec ./bin/read_msr "INF" "$MSR_READING_NS" "$i"&
       exec ./bin/read_msr "-U" "-r$MSR_READING_NS" "-c$i"&
       rd_msr_pids+=($!)
 
@@ -185,41 +166,28 @@ do
       chrt -p $!
       
       echo -e "\nSetting cpu affinity"
-      
       mask=$((1 << i))
       taskset -p "$mask" "$!"
       printf "pid $! affinity [cpu $i] - mask [0x%x]\n" $mask
 
-      #exec chrt -f 99 taskset -c $i ./bin/read_msr "INF" "$MSR_READING_NS" "$i" & # > /dev/null &
     done
 
     cd script
 
+    # Starting trace on rt-app and read_msr events
     (
       cd ..
+      echo "Collecting pids to trace ..."
       
-      if [ $EXEC_MODE -eq 0 ]; then
-      # constant load, variable frequency
-      # 
-        echo "Starting freq mode..."
-        #trace-cmd record -P 0 -e sched_switch -f "prev_comm==\"rt-app\" || next_comm==\"rt-app\"" -e read_msr -f "msr==0x19c" -o $DAT_DIR/sw_$freq.dat rt-app $CONF_DIR/$2
-        #exec trace-cmd report $DAT_DIR/sw_$freq.dat > $REP_DIR/sw_$freq.txt 
-      else
-        # rt-app mode
-        echo "Starting rt-app mode..."
-        
-        # pid list for trace-cmd trace
-        pids_list=""
-        for pid in "${rd_msr_pids[@]}"; do
-          pids_list="$pids_list -P $pid"
-        done
-        echo "$pids_list"
+      # pid list for trace-cmd trace
+      pids_list=""
+      for pid in "${rd_msr_pids[@]}"; do
+        pids_list="$pids_list -P $pid"
+      done
+      echo "$pids_list"
 
-        chrt -f 80 trace-cmd record -P0 $pids_list -e sched_switch -e read_msr -f "msr==0x19c" -o $DAT_DIR/sw_$freq.dat rt-app $CONF_DIR/$2
-        #trace-cmd record -P0 -P$read_msr_pid -e sched_switch -e read_msr -f "msr==0x19c" -o $DAT_DIR/sw_$freq.dat rt-app $CONF_DIR/$2
-        exec trace-cmd report $DAT_DIR/sw_$freq.dat > $REP_DIR/sw_$freq.txt 
-
-      fi      
+      chrt -f 80 trace-cmd record -P0 $pids_list -e sched_switch -e read_msr -f "msr==0x19c" -o $DAT_DIR/sw_$freq.dat rt-app $CONF_DIR/$2
+      exec trace-cmd report $DAT_DIR/sw_$freq.dat > $REP_DIR/sw_$freq.txt   
     )&
 
     trace_pid=$!
@@ -234,9 +202,6 @@ do
       wait $pid
       printf " Done\n"
     done
-
-    #kill -SIGINT $read_msr_pid
-    #wait $read_msr_pid
     
     echo -e "\n\n< Cooling the engines >\n\n"
     sleep 3  
