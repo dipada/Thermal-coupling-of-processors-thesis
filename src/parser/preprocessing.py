@@ -24,8 +24,6 @@ def sched_switch_occurs(cpu, timestamp, desc):
 
     if re.match(start_exec, desc): # something on current cpu starts executing
         cpu_state[cpu] = {"start": timestamp}
-    
-    # print(f"sched_switch event at timestamp {timestamp} on cpu {cpu} with description: {desc}")
 
     elif re.match(end_exec, desc): # something on current cpu ends executing
         if cpu in cpu_state:
@@ -102,15 +100,6 @@ if not os.path.exists(in_file_dir):
     os.mkdir(in_file_dir)
 
 # Regexs to match different parts of the line
-#proc_name = r'\s+(\S+)'  #
-#proc_name = r'\s+(.+?)-'
-
-#proc_id = r'(?:-(\d+))?'
-#proc_id = r'-(\d+)' #
-
-#proc_name = r'(\w+(?:[-:]\w+)*)'
-#proc_id = r'(\d+)'
-
 proc_info = r'\s+(.)'
 cpu = r'\s+\[(\d+)\]'
 timestamp = r'\s+(\d+\.\d+):'
