@@ -8,6 +8,8 @@ readonly BASE_DIR=$(dirname $(pwd))
 readonly RES_DIR="$BASE_DIR/resources"
 readonly CONF_DIR="$RES_DIR/configuration"
 
+RUN_FREQ=2500
+
 function sigint_handler() {
     trap - SIGINT
     exit 0
@@ -24,7 +26,7 @@ trap 'sigint_handler' SIGINT
 
 for file in $CONF_DIR/singleCore2sec/*
 do
-  ./driver.sh -rt "/$(basename $(dirname $file))/$(basename $file)"
+  ./driver.sh -rt "/$(basename $(dirname $file))/$(basename $file)" -f "$RUN_FREQ"
   sleep 2
 done
 
@@ -32,7 +34,7 @@ sleep 8
 
 for file in $CONF_DIR/singleCore1sec/*
 do
-  ./driver.sh -rt "/$(basename $(dirname $file))/$(basename $file)"
+  ./driver.sh -rt "/$(basename $(dirname $file))/$(basename $file)" -f "$RUN_FREQ"
   sleep 2
 done
 
@@ -40,7 +42,7 @@ sleep 8
 
 for file in $CONF_DIR/singleCore500ms/*
 do
-  ./driver.sh -rt "/$(basename $(dirname $file))/$(basename $file)"
+  ./driver.sh -rt "/$(basename $(dirname $file))/$(basename $file)" -f "$RUN_FREQ"
   sleep 2
 done
 
@@ -48,7 +50,7 @@ sleep 8
 
 for file in $CONF_DIR/singleCore200ms/*
 do
-  ./driver.sh -rt "/$(basename $(dirname $file))/$(basename $file)"
+  ./driver.sh -rt "/$(basename $(dirname $file))/$(basename $file)" -f "$RUN_FREQ"
   sleep 2
 done
 
@@ -56,7 +58,7 @@ sleep 8
 
 for file in $CONF_DIR/singleCore100ms/*
 do
-  ./driver.sh -rt "/$(basename $(dirname $file))/$(basename $file)"
+  ./driver.sh -rt "/$(basename $(dirname $file))/$(basename $file)" -f "$RUN_FREQ"
   sleep 2
 done
 
