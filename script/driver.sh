@@ -29,6 +29,10 @@ readonly RT_LOGS_DIR="$OUTPUT_DIR/rt-app-logs"
 readonly MSR_READING_INTERVAL_MS=10 # in ms
 readonly MSR_READING_NS=$(( $MSR_READING_INTERVAL_MS*1000000 )) # in ns
 
+readonly PRINT_USAGE="Usage: $0\n$0 [-rt <input_file>] (-f <frequency> MHz)"
+
+FIXED_FREQ=0
+
 function sigint_handler() {
     echo -e "\nRestoring stock configuration..."
     restore_stock_configuration
@@ -53,18 +57,32 @@ function restore_stock_configuration(){
 
 
 # -rt option start rt-app mode and need a configuration file
-
-if [ $# -eq 2 ] && [ $1 == "-rt" ]; then
+if [ $# -ge 2 ] && [ $1 == "-rt" ]; then
   if [ ! -f $CONF_DIR/$2 ]; then
     echo -e "Error: input file not found\nMake sure the file exists in $(basename $CONF_DIR)/"
     exit 1
-  else
-    echo "... loading configuration file $2 ..."
   fi 
+  if [ $# -eq 4 ] && [ $3 == "-f" ]; then # Fixed frequency option
+    re='^[0-9]+$'
+    if ! [[ $4 =~ $re ]] ; then
+      echo "Driver >> Error you must specify a valid frequency"
+      exit 1
+    fi
+
+    if [ $4 -lt $MIN_FREQ_MHZ ] || [ $4 -gt $BASE_FREQ_MHZ ]; then
+      echo "Driver >> Error: frequency must be between ($MIN_FREQ_MHZ-$BASE_FREQ_MHZ) MHz"
+      exit 1
+    fi
+    
+    echo "Fixed frequency will be set to $4 MHz"
+    FIXED_FREQ=1
+  fi
 else
-  echo -e "Usage: $0\n$0 [-rt <input_file>]"
+  echo -e $PRINT_USAGE
   exit 1
 fi
+
+echo "... loading configuration file $2 ..."
 
 cd ..
 
@@ -129,8 +147,14 @@ echo "Frequency range ($MIN_FREQ_MHZ - $BASE_FREQ_MHZ MHz)"
 # Set sigint_handler as SIGINT handler 
 trap 'sigint_handler' SIGINT
 
-#freq=$MIN_FREQ_MHZ
-freq=2500
+if [ $FIXED_FREQ -eq 1 ]; then
+  echo "Fixed frequencyytty $4 MHz"
+  freq=$4
+  end_freq=$4
+else
+  freq=$MIN_FREQ_MHZ
+  end_freq=$BASE_FREQ_MHZ
+fi
 
 cd script
 # disabling turbo
@@ -141,11 +165,10 @@ cd script
 
 
 # execute tracing on rt-app on frequency range
-# every loop frequency will be increased by 100 mhz
-#BASE_FREQ_MHZ
-while [ $freq -le 2500 ]
+# every loop frequency will be increased by 100 mhz if fixed frequency is not set
+while [ $freq -le $end_freq ]
 do
-    echo "Actual $freq MHz - Target $BASE_FREQ_MHZ MHz"
+    echo "Actual $freq MHz - Target $end_freq MHz"
 
     ./set_cpu_freq.sh $freq
 
