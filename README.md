@@ -22,15 +22,15 @@ For run this project you need to have:
 
 ## How to run
 
-### 1. Clone this repository
-### 2. go to scripts directory
-### 3. launch with root privileges
+1. Clone this repository
+2. go to scripts directory
+3. launch with root privileges (used configuration.json must be in resources/configuration directory)
 ```bash ./driver.sh -rt singleCore1sec/singleCore1sec-cpu0.json -f 2500```
 If run this script without -f option, passed configuration file will be runned by the minimum frequency of the cpu at base frequency.
-### 3.1 if you want to run multiple tests, launch with root privileges
+3.1 if you want to run multiple tests, launch with root privileges
 ```bash ./multiple_conf.sh```
-### 4. wait for the end of the test
-### 5. prompt will display the path of the output file. All plots will be saved in output/plots/ directory
+4. wait for the end of the test
+5. prompt will display the path of the output file. All plots will be saved in output/plots/ directory
 
 ## Customization
 You can customize different parameters for fit different needs:
@@ -40,7 +40,7 @@ You can customize different parameters for fit different needs:
 - If want run ./multiple_conf.sh with different frequency, you can change the frequency in the script. Frequency will be applied to all tests.
 
 ## Test generation
-There are 2 mode for generate tests:
+There are two different mode for generate tests:
 - Self-writing a configuration.json according to rt-app syntax and put it in resources/configuration directory
 - Using confgen.py script. With this script u will be able to generate a configuration.json file with a specific number of tasks, a specific number of cores and a specific period for each task. This script will generate multiple configuration.json with same parameteres by varying the cpu that will execute the workloads. All json will be under resources/configuration directory.
 
