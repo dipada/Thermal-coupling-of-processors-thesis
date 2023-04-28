@@ -252,7 +252,7 @@ done
 
 wait
 
-echo -e "Done!\nFiles are in $(dirname $OUTPUT_DIR)/csv/$date directory"
+echo -e "Done!\nFiles are in $OUTPUT_DIR/csv/$date directory"
 
 
 # plot generated csv files
@@ -274,4 +274,4 @@ wait
 
 $(chmod -R u+w "$OUTPUT_DIR/plots/$file_name-$date")
 
-echo -e "Done!\nFiles are in $(dirname $OUTPUT_DIR)/plots/$file_name-$date directory"
+echo -e "Done!\nFiles are in $OUTPUT_DIR/plots/$file_name-$date directory"
