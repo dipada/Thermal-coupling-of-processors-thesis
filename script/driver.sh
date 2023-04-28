@@ -13,7 +13,8 @@ then
 fi 
 
 readonly MIN_FREQ_MHZ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq | awk '{print $1/1000}')
-readonly BASE_FREQ_MHZ=$(lscpu | grep 'Model name:' | awk '{print $8}' | cut -c1-4 | awk '{printf "%d", $1 * 1000}')
+#readonly BASE_FREQ_MHZ=$(lscpu | grep 'Model name:' | awk '{print $8}' | cut -c1-4 | awk '{printf "%d", $1 * 1000}')
+readonly BASE_FREQ_MHZ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/base_frequency | awk '{print $1/1000}')
 
 readonly BASE_DIR=$(dirname $(pwd))
 readonly OUTPUT_DIR="$BASE_DIR/output"
