@@ -8,7 +8,12 @@ import re
 import csv
 import datetime
 
-TJMAX = 100 # TJMAX value for Intel i7-9750H
+TJMAX = 100 # TJMAX value for Intel i7-9750H change this if different on your CPU
+
+# Readed values under min threshold or over max threshold will be ignored
+TEMP_MIN_THRESHOLD = 10
+TEMP_MAX_THRESHOLD = 120
+
 
 CURRENT_DIR = os.path.dirname(__file__)
 BASE_DIR = os.path.abspath(os.path.join(CURRENT_DIR, "../../"))
@@ -41,22 +46,24 @@ def sched_switch_occurs(cpu, timestamp, desc):
 
 
 
-def read_msr_occurs(cpu, timestamp, desc):
+def read_msr_occurs(cpu, timestamp, desc, lower_bound=0, upper_bound=120):
     value_regex = r'19c, value\s+([0-9a-fA-F]+)\b'
 
     match = re.match(value_regex, desc)
     if match:
         # convert value in hex
-        value = int(match.group(1), 16)
+        hex_value = int(match.group(1), 16)
+        celsius_value = TJMAX - (hex_value >> 16 & 0x7F) # extracted according intel system documentation
         
         cpu_dir = os.path.join(in_file_dir, cpu)
         if not os.path.exists(cpu_dir):
             os.mkdir(cpu_dir)
-
-        file_path = os.path.join(cpu_dir, f"msr_readings_{cpu}.csv") 
-        with open(file_path, "a") as f:
-            writer = csv.writer(f)
-            writer.writerow([timestamp, TJMAX - (value >> 16 & 0x7F)])
+        
+        if (celsius_value >= lower_bound and celsius_value <= upper_bound):
+            file_path = os.path.join(cpu_dir, f"msr_readings_{cpu}.csv") 
+            with open(file_path, "a") as f:
+                writer = csv.writer(f)
+                writer.writerow([timestamp, celsius_value])
 
 if len(sys.argv) < 2 or len(sys.argv) > 3:
     print("Usage: python preprocessing.py <file_name> <date_dir>")
@@ -123,7 +130,7 @@ with open(file_path, "r") as f:
                 sched_switch_occurs(cpu_num, time_stamp, description)
                 
             elif event_type == "read_msr":
-                read_msr_occurs(cpu_num, time_stamp, description)
+                read_msr_occurs(cpu_num, time_stamp, description, TEMP_MIN_THRESHOLD, TEMP_MAX_THRESHOLD)
 
 if user_date_dir is None:
     print("Preprocessing - " + file_name + " >> Done!\nFiles are in " + os.path.relpath(date_dir) + " directory.")
