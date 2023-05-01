@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# options on - off - forceoff
-# https://serverfault.com/questions/235825/disable-hyperthreading-from-within-linux-no-access-to-bios
+# This script disable hyper threading (SMT) if enabled
 
 ROOT_UID=0     # Only users with $UID 0 have root privileges.
 E_NOTROOT=67   # Non-root exit error.

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# This script disable turbo boost if enabled
+
 ROOT_UID=0     # Only users with $UID 0 have root privileges.
 E_NOTROOT=67   # Non-root exit error.
 

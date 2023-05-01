@@ -16,9 +16,6 @@ then
   exit $E_NOTROOT
 fi 
 
-#readonly MAX_FREQ_MHZ=$(lscpu | grep -E '^CPU max MHz' | awk '{print $4}' | awk -F"." '{print $1}')
-#readonly MIN_FREQ_MHZ=$(lscpu | grep -E '^CPU min MHz' | awk '{print $4}' | awk -F"." '{print $1}')
-
 readonly MAX_FREQ_MHZ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq | awk '{print $1/1000}')
 readonly MIN_FREQ_MHZ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq | awk '{print $1/1000}')
 
@@ -46,9 +43,6 @@ if [ $# -eq 2 ]; then
   fi
 fi
 
-#frequency=$(echo $1);
-
-#re='^[0-9]+(\.[0-9]+)?$'
 re='^[0-9]+$'
 
 # check if freqs are integers
@@ -65,9 +59,6 @@ if [ $? -ne 0 ]; then
   echo "Invalid frequency $freq_max. Frequency must be an integer number and in MHz"
   exit 1
 fi
-
-
-#https://unix.stackexchange.com/questions/232384/argument-string-to-integer-in-bash
 
 # check if the frequency is supported by the cpu
 if [ "$freq_min" -lt "$MIN_FREQ_MHZ" ];then
@@ -86,8 +77,6 @@ cpucount=$(cat /proc/cpuinfo|grep processor|wc -l)
 i=0
 while [ $i -ne $cpucount ]
 do
-  #echo "Setting freq $FREQROOT/cpu"$i"/cpufreq/cpuinfo_max_freq to " $frequency " MHz"
-  #echo "Setting cpu-"$i" to" $frequency "MHz"
   FREQMAX="$FREQROOT/cpu"$i"/cpufreq/scaling_max_freq" 
   FREQMIN="$FREQROOT/cpu"$i"/cpufreq/scaling_min_freq"
   echo $(($freq_max * 1000)) > $FREQMAX
