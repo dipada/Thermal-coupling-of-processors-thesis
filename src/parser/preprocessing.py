@@ -113,13 +113,12 @@ timestamp = r'\s+(\d+\.\d+):'
 event = r'\s+(\S+):'
 desc = r'\s+(.*)'
 
-#regex = proc_name + proc_id + cpu + timestamp + event + desc
 regex =  r'.*' + cpu + timestamp + event + desc
-patter = re.compile(regex)
+pattern = re.compile(regex)
 
 with open(file_path, "r") as f:
     for line in f:
-        match = patter.match(line)
+        match = pattern.match(line)
         if match:
             cpu_num = match.group(1)
             time_stamp = match.group(2)
