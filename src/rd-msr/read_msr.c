@@ -9,11 +9,12 @@
 #define MSR_TERM_STATUS 0x19c        // cpus temp
 #define MSR_TEMPERATURE_TARGET 0x1a2 // for TjMax
 #define PATH_MSR_FILE "/dev/cpu/%d/msr"
-#define PRINT_USAGE fprintf(stderr, "Usage: %s [ -U | -e secs ] [ -r nanosecs ] [ -c ncpu ]             \
-                                                \n-U unbounded execution                                \
-                                                \n-e execution time                                     \
-                                                \n-r reads frequency                                    \
-                                                \n-c cpu for msr reads\n", argv[0]); exit(EXIT_FAILURE);
+#define PRINT_USAGE fprintf(stderr, "Usage: %s [ -h ] [ -U | -e secs ] [ -r nanosecs ] [ -c ncpu ]                                  \
+                                                \n-h Print this help                                                                \
+                                                \n-U Unbounded execution (default 5 secs)                                           \
+                                                \n-e Execution time (default 5 secs)                                                \
+                                                \n-r Reads frequency (default 100 ms)                                               \
+                                                \n-c Select single processor number (default all)\n", argv[0]); exit(EXIT_FAILURE);
 #define UNBOUNDED "INF"
 #define DEFAULT_READ_NS 100000000  // 100ms default read msr
 #define DEFAULT_DURATION 5
@@ -47,9 +48,13 @@ int main(int argc, char **argv){
 
   int opt;
 
-  while ((opt = getopt(argc, argv, "Ue:r:c:")) != -1){
+  while ((opt = getopt(argc, argv, "Uhe:r:c:")) != -1){
     
     switch (opt){
+      case 'h': // display help function
+        PRINT_USAGE
+        break;
+
       case 'U': // unbounded execution
         unbounded = true;
         printf("Unbounded execution\n");
