@@ -305,7 +305,7 @@ def plot_stacked_subplots(fig_name, running_freq=None, conf_name=None, reads_ran
     #plt.show()
     plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}_stacked.pdf"))
     #plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}_stacked.svg"))
-    #plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}_stacked.png"), dpi=2000)
+    plt.savefig(os.path.join(PLOT_DIR, files_dir, f"{fig_name}_stacked.png"), dpi=600)
 
 
 parser = argparse.ArgumentParser(description="Plot temperature and execution times of a set of cpus.")
