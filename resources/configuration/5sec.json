@@ -1,0 +1,22 @@
+{
+    "tasks": {
+        "thread0": {
+            "loop": -1,
+            "cpus": [
+                0
+            ],
+            "run": 5000000,
+            "sleep": 5000000
+        }
+    },
+    "global": {
+        "duration": 30,
+        "calibration": "CPU0",
+        "default_policy": "SCHED_OTHER",
+        "pi_enabled": false,
+        "lock_pages": false,
+        "logdir": "output/rt-app-logs/",
+        "log_basename": "cpu0-5s",
+        "gnuplot": false
+    }
+}

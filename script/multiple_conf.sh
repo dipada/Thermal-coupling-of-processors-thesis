@@ -62,3 +62,10 @@ do
   sleep 2
 done
 
+sleep 8
+
+./driver.sh -rt "5sec.json" -f "$RUN_FREQ"
+
+sleep 8
+
+./driver.sh -rt "10sec.json" -f "$RUN_FREQ"
